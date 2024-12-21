@@ -98,19 +98,17 @@
 </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { useDebounceFn } from '@vueuse/core';
+import { ref, computed, nextTick } from 'vue'
 import Bracket from './Bracket.vue'
 import DrawColorIcon from '@/shared/ui/DrawColorIcon.vue';
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Trophy from '@/shared/icons/Trophy.vue';
 import BrokenHeart from '@/shared/icons/BrokenHeart.vue';
-import { useConnectionStore } from './connection';
+import { useConnectionStore } from '../lib/useConnection';
 import { storeToRefs } from 'pinia';
-import BracketListEditor from './BracketListEditor.vue'
-import { useBracket } from './lib/useBracket';
-import { useSchedule } from './lib/useSchedule';
-import type { BracketGame, BracketEvent } from './lib/types'
+import { useBracket } from '../lib/useBracket';
+import { useSchedule } from '../lib/useSchedule';
+import type { BracketGame } from '../lib/types'
 
 const { originId, loserOriginId, originBracketId } = storeToRefs(useConnectionStore());
 const { setOriginId, setLoserOriginId, setConnectionId, setOriginBracketId } = useConnectionStore();

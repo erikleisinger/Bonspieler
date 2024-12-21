@@ -165,8 +165,8 @@ import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Trophy from '@/shared/icons/Trophy.vue'
 import BrokenHeart from '@/shared/icons/BrokenHeart.vue'
 import { watch, ref, nextTick, onMounted, computed } from 'vue'
-import { useDraggableStore } from './draggable';
-import { useConnectionStore } from './connection'
+import { useDraggableStore } from '../lib/useDraggable';
+import { useConnectionStore } from '../lib/useConnection'
 import { get, useMouse } from '@vueuse/core'
 import { useUniqueId } from '@/shared/composables/useUniqueId'
 import { useDrawColor } from '@/shared/composables/useDrawColor'

@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import { useEventListener, useElementHover, useElementBounding } from '@vueuse/core'
-import { useDraggableStore } from './draggable';
+import { useDraggableStore } from '../lib/useDraggable';
 import { storeToRefs } from 'pinia';
 
 const props = withDefaults(defineProps<{
