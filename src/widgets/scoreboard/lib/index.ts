@@ -1,0 +1,1 @@
+export { calcTotalScore } from './calcTotalScore';

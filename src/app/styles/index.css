@@ -1,0 +1,6 @@
+@layer normalize, base, components, utilities, app;
+@import './normalize.css' layer(normalize);
+@import './base.css' layer(app);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
