@@ -22,7 +22,7 @@ import { ref } from 'vue'
 import HeadToHeadOptions from './HeadToHeadOptions.vue'
 import Button from '@/shared/ui/Button.vue'
 import Input from '@/shared/ui/Input.vue';
-import BracketManagerSimple from '@/widgets/Bracket2/BracketManagerSimple.vue'
+import BracketManagerSimple from '@/widgets/BracketManager/BracketManagerSimple.vue'
 const props = defineProps<{
   numWinners: number,
   numTeams: number,

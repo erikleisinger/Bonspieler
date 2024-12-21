@@ -64,7 +64,7 @@ import Button from '@/shared/ui/Button.vue';
 import StageSelect from './StageSelect.vue'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import { PoolManager } from '@/widgets/PoolManager';
-import BracketManager from '@/widgets/Bracket2/BracketManager.vue';
+import BracketManager from '@/widgets/BracketManager/BracketManager.vue';
 
 const stages = ref<BonspielStage[]>([{
   id: '1',
