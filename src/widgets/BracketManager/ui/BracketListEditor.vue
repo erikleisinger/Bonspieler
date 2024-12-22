@@ -11,7 +11,7 @@
       - Bracket {{ index + 1 }}
     </div>
   </div>
-  <div class="flex justify-center gap-2">
+  <div class="flex justify-center gap-2" v-if="editable">
     <NumberBubble class="bg-blue-500 text-white cursor-pointer w-[40px] h-[40px] text-2xl" @click="addBracket"
       v-if="!editMode">+
     </NumberBubble>
@@ -36,6 +36,7 @@ import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Pencil from '@/shared/icons/Pencil.vue'
 import Checkmark from '@/shared/icons/Checkmark.vue'
 const props = defineProps({
+  editable: Boolean,
   games: Object
 })
 

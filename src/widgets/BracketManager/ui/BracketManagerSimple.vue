@@ -118,7 +118,6 @@ const selectedGameId = ref<string | null>(null)
 const {
   games,
   gamesIndex,
-  gamesBracketIndex,
   addGame,
   addWinnerConnection,
   deleteGameFromBracket,

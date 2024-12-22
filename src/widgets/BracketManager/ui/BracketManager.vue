@@ -1,75 +1,88 @@
 <template>
-<div class="absolute inset-0 pa-8 bg-black/10 ">
-  <div class="absolute inset-4  overflow-auto grid grid-rows-[auto,_1fr]">
-    <div class="flex gap-2 p-2 bg-gray-100 mb-2 rounded-xl sticky top-0 z-30 shadow-md">
-
-      <BracketListEditor v-model:games="games" @click="scrollToBracket">
-      </BracketListEditor>
-    </div>
-    <div class="grid grid-cols-[auto,_1fr] gap-4">
-      <div class="bg-white p-4 rounded-xl  sticky top-[70px] overflow-auto" style="height: calc(100vh - 125px)">
-        <div class="bg-gray-100 rounded-lg px-4 py-1 text-sm mb-2">
-          <div class="flex justify-between">Starting teams: <strong>{{ requiredNumTeams }}</strong></div>
-          <div class="flex justify-between">Ending teams: <strong>{{ numEndTeams }}</strong></div>
-        </div>
-        <div class="bg-gray-100 p-2 px-4 rounded-xl">
-          <div class="font-semibold mb-2">
-            <div>Draws ({{ numDraws }})</div>
-
+<div class="absolute inset-0 pa-8 bg-black/10 overflow-hidden">
+  <div class="absolute inset-2 grid grid-cols-[275px,_1fr] gap-4  ">
+    <div class="relative">
+      <div class="absolute inset-0 overflow-auto">
+        <div class="bg-white p-4 rounded-xl ">
+          <div class="bg-gray-100 rounded-lg px-4 py-1 text-sm mb-2">
+            <div class="flex justify-between">Starting teams: <strong>{{ requiredNumTeams }}</strong></div>
+            <div class="flex justify-between">Ending teams: <strong>{{ numEndTeams }}</strong></div>
           </div>
-          <div class="bg-blue-500 p-2 rounded-lg mb-2  relative">
-            <div class="flex mb-2 gap-2 items-center">
-              <div class="text-xs">🔧</div>
+          <div class="bg-gray-100 p-2 px-4 rounded-xl">
+            <div class="font-semibold mb-2">
+              <div>Draws ({{ numDraws }})</div>
 
-              <div class="font-semibold text-white">
-                Options
+            </div>
+            <div class="bg-blue-500 p-2 rounded-lg mb-2  relative" v-if="editable">
+              <div class="flex mb-2 gap-2 items-center">
+                <div class="text-xs">🔧</div>
+
+                <div class="font-semibold text-white">
+                  Options
+                </div>
+
               </div>
 
+              <div class="flex flex-col bg-white rounded-lg  px-2 py-1">
+                <label for="sheetsinput" class="text-sm text-slate-700">Sheets</label>
+                <input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
+                  v-model="numSheets">
+                </input>
+              </div>
             </div>
 
-            <div class="flex flex-col bg-white rounded-lg  px-2 py-1">
-              <label for="sheetsinput" class="text-sm text-slate-700">Sheets</label>
-              <input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
-                v-model="numSheets">
-              </input>
-            </div>
-          </div>
+            <div v-for="draw in Array.from(Array((numDraws)).keys())" :key="draw" @click="onDrawButtonClick(draw + 1)"
+              class="flex  gap-2 rounded-lg mb-1 py-1 px-2 border-2 bg-white hover:bg-gray-200 hover:text-slate-900 cursor-pointer min-w-[200px]"
+              :class="{
 
-          <div v-for="draw in Array.from(Array((numDraws)).keys())" :key="draw" @click="onDrawButtonClick(draw + 1)"
-            class="flex  gap-2 rounded-lg mb-1 py-1 px-2 border-2 bg-white hover:bg-gray-200 hover:text-slate-900 cursor-pointer min-w-[200px]"
-            :class="{
-
-              [`border-blue-500 border-2`]: selectedDraw === draw + 1
-            }">
-            <DrawColorIcon class="w-[12px] h-[12px] mt-[0.45rem]" :drawNumber="draw + 1" />
-            <div>
+                [`border-blue-500 border-2`]: selectedDraw === draw + 1
+              }">
+              <DrawColorIcon class="w-[12px] h-[12px] mt-[0.45rem]" :drawNumber="draw + 1" />
               <div>
-                Draw {{ draw + 1 }}
+                <div>
+                  Draw {{ draw + 1 }}
+                </div>
+                <div class="text-xs -mt-1 text-slate-600">{{ gamesPerDraw[draw + 1]?.length }} {{
+                  `game${gamesPerDraw[draw
+                    + 1]?.length >
+                    1 ? 's' : ''}` }}</div>
               </div>
-              <div class="text-xs -mt-1 text-slate-600">{{ gamesPerDraw[draw + 1]?.length }} {{ `game${gamesPerDraw[draw
-                + 1]?.length >
-                1 ? 's' : ''}` }}</div>
-            </div>
 
+            </div>
           </div>
         </div>
       </div>
-      <div class="relative">
-        <div class="relative rounded-xl mb-8" v-for="bracket, index in Object.keys(games)" :key="bracket"
-          :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'" :id="`BRACKET_${bracket}`">
+    </div>
 
-          <Bracket class="rounded-xl min-h-[600px]" v-model:selectedGameId="selectedGameId" :mode="mode"
-            :availableGames="availableGames" :games="gamesWithOrigins[bracket]"
-            @update:games="setGamesForBracket($event, bracket)" @selectGame="onGameSelect($event, bracket)"
-            @beginConnect="beginConnect" :uniqueId="bracket" :loser="loserGame" :winner="winnerGame"
-            @removeWinnerConnection="removeWinnerConnection($event)"
-            @removeRound="removeRoundFromBracket($event, bracket)" :drawNumbers="drawNumbers" @clear="reset"
-            @viewTeamConnection="onViewTeamConnection" @addGame="addGame($event, bracket)" />
+    <div class="relative">
+      <div class="grid grid-rows-[auto,_1fr]  overflow-auto gap-4 absolute inset-0">
+        <div class="flex gap-2 p-2 bg-gray-100  rounded-xl sticky top-0 z-30 shadow-md ">
+
+          <BracketListEditor v-model:games="games" @click="scrollToBracket" :editable="editable">
+          </BracketListEditor>
+        </div>
+
+        <div class="relative">
+
+          <div class="relative rounded-xl mb-8" v-for="bracket, index in Object.keys(games)" :key="bracket"
+            :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'" :id="`BRACKET_${bracket}`">
+            <BracketEditable v-if="editable" class="rounded-xl min-h-[600px]" :availableGames="availableGames"
+              @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId" :uniqueId="bracket"
+              :drawNumbers="drawNumbers" @clear="reset" @viewTeamConnection="onViewTeamConnection" />
+
+            <Bracket v-else class="rounded-xl min-h-[600px]" :rounds="getRoundsForBracket(bracket)"
+              :games="getEditableGames(getGamesForBracket(bracket))" :availableGames="availableGames"
+              @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId" :uniqueId="bracket"
+              :drawNumbers="drawNumbers" @clear="reset" @viewTeamConnection="onViewTeamConnection" />
+
+
+
+          </div>
 
         </div>
       </div>
     </div>
-    <div class="fixed inset-0 pointer-events-none rounded-xl  border-blue-500 z-50" :class="{
+    <div v-if="editable" class="fixed inset-0 pointer-events-none rounded-xl  border-blue-500 z-50" :class="{
       'border-0': !selectedGame,
       'border-[16px]': !!selectedGame,
     }" style="transition: border 0.2s">
@@ -151,6 +164,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useDebounceFn } from '@vueuse/core';
 import Bracket from './Bracket.vue'
+import BracketEditable from './BracketEditable.vue'
 import DrawColorIcon from '@/shared/ui/DrawColorIcon.vue';
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Trophy from '@/shared/icons/Trophy.vue';
@@ -160,18 +174,27 @@ import { storeToRefs } from 'pinia';
 import BracketListEditor from './BracketListEditor.vue'
 import { useBracket } from '../lib/useBracket';
 import { useSchedule } from '../lib/useSchedule';
-import type { BracketGame, BracketEvent } from './lib/types'
+import type { BracketGame } from './lib/types'
+import { useUniqueId } from '@/shared/composables/useUniqueId';
+import { useEditableBracket } from '../lib/useEditableBracket';
+
+const props = defineProps<{
+  editable: boolean,
+}>()
 
 const { originId, loserOriginId, originBracketId } = storeToRefs(useConnectionStore());
 const { setOriginId, setLoserOriginId, setConnectionId, setOriginBracketId } = useConnectionStore();
 
-const selectedGameId = ref<string | null>(null)
+
+const uniqueId = useUniqueId()
 
 const {
-  games,
-  gamesIndex,
-  gamesBracketIndex,
-  addGame,
+  useBracketStore
+} = useBracket(uniqueId);
+
+const bracketStore = useBracketStore();
+
+const {
   addWinnerConnection,
   deleteGameFromBracket,
   getAllEventGames,
@@ -179,17 +202,25 @@ const {
   getAvailableLoserGames,
   getAvailableWinnerGames,
   getConnectedGames,
+  getEditableGames,
   getGameBracketId,
+  getGameById,
+  getGamesForBracket,
   getNumRequiredTeamsForBracketEvent,
-  removeRoundFromBracket,
+  getRoundsForBracket,
+  hasLessThanTwoOriginConnections,
+  initGames,
   removeWinnerConnection,
-  setGamesForBracket, getGamesWithOrigins,
+  setSelectedGameId,
   updateGames,
   updateLoserConnection,
-  gamesWithReadableIds,
-} = useBracket();
+} = bracketStore
 
-const gamesWithOrigins = computed(() => getGamesWithOrigins(gamesWithReadableIds.value))
+const {
+  games,
+  gamesIndex,
+  selectedGameId,
+} = storeToRefs(bracketStore);
 
 function scrollTo(elementSelector: string) {
   const el = document.querySelector(elementSelector)
@@ -212,30 +243,13 @@ const allGames = computed(() => {
   return getAllEventGames()
 })
 
-function getGameById(gameId: string | null) {
-  return allGames.value.find(({ id }) => id === gameId)
-}
+const editableBracketStore = useEditableBracket(uniqueId)()
 
-const loserGame = computed(() => {
-  if (!selectedGameId.value) return;
-  return getGameById(selectedGameId.value)?.connections?.loser
-})
+const { mode } = storeToRefs(editableBracketStore)
+const { setBracketManagerMode, beginConnect, beginLoserConnect } = editableBracketStore
 
-const winnerGame = computed(() => {
-  if (!selectedGameId.value) return;
-  return getGameById(selectedGameId.value)?.connections?.winner
-})
 
-type BracketManagerMode = 'view' | 'viewGame' | 'viewDraw' | 'setWinner' | 'setLoser'
-const mode = ref<BracketManagerMode>('view')
 
-function setBracketManagerMode(newMode: BracketManagerMode) {
-  mode.value = newMode;
-}
-
-function setSelectedGameId(gameId: string | null) {
-  selectedGameId.value = gameId;
-}
 
 function reset() {
   setSelectedGameId(null);
@@ -290,6 +304,7 @@ async function viewGame(game: BracketGame) {
   setBracketManagerMode('viewGame')
   setOriginBracketId(bracketId)
 }
+
 async function onGameSelect(game: BracketGame) {
   const gameId = game?.id || null;
   const bracketId = getGameBracketId(gameId)
@@ -300,12 +315,14 @@ async function onGameSelect(game: BracketGame) {
       break;
 
     case 'setWinner':
+      if (!hasLessThanTwoOriginConnections(game)) break;
       addWinnerConnection(originId.value.split('_')[3], gameId, bracketId)
       setBracketManagerMode('viewGame')
       setOriginId('')
       break;
 
     case 'setLoser':
+      if (!hasLessThanTwoOriginConnections(game)) break;
       updateLoserConnection(loserOriginId.value, gameId, originBracketId.value)
       setBracketManagerMode('viewGame')
       setOriginBracketId(bracketId)
@@ -328,22 +345,7 @@ function getGameElementId(gameId: string, bracketId: string) {
   return `${bracketId}_CONNECTABLE_GAME_${gameId}`
 }
 
-function beginConnect(gameId: string) {
-  const bracketId = getGameBracketId(gameId)
-  setBracketManagerMode('setWinner')
-  setOriginId(getGameElementId(gameId, bracketId));
-  setConnectionId('MOUSE_SHADOW_' + bracketId);
-  setOriginBracketId(bracketId)
-  setSelectedGameId(gameId)
-}
 
-function beginLoserConnect() {
-  const bracketId = getGameBracketId(selectedGameId.value)
-  setBracketManagerMode('setLoser')
-  setLoserOriginId(selectedGameId.value);
-  setOriginBracketId(bracketId)
-  setSelectedGameId(selectedGameId.value)
-}
 
 function removeLoserConnection() {
   updateLoserConnection(selectedGameId.value, '')
@@ -477,6 +479,19 @@ const onViewTeamConnection = (e) => {
   scrollToGame(gameId)
 }
 
+const saveLocal = useDebounceFn((val) => {
+  localStorage.setItem('games', JSON.stringify(val))
+}, 4000)
+watch(games, (val) => {
+  saveLocal(val)
+}, { deep: true })
+
+onMounted(() => {
+  const g = localStorage.getItem('games')
+  if (g) {
+    initGames(JSON.parse(g))
+  }
+})
 
 
 

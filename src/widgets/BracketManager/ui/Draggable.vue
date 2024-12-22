@@ -56,15 +56,6 @@ const el = ref(null)
 
 const offsetX = ref(0);
 const offsetY = ref(0)
-useEventListener(el, 'mouseover', (e) => {
-  e.stopPropagation();
-
-  hovered.value = true;
-})
-useEventListener(el, 'mouseleave', (e) => {
-  e.stopPropagation();
-  hovered.value = false;
-})
 useEventListener(el, 'mousedown', (e) => {
   e.stopPropagation();
   const path = e.composedPath();
@@ -101,5 +92,4 @@ function onMouseMove(e) {
   if (props.xAxis) x.value += movementX + ((1 - window.devicePixelRatio) * (movementY < 0 ? -1 : 1))
   if (props.yAxis) setYValue(y.value + movementY + ((1 - window.devicePixelRatio) * (movementY < 0 ? -1 : 1)))
 }
-const hovered = useElementHover(el)
 </script>

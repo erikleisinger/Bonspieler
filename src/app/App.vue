@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import Layout from './Layout.vue'
 </script>
 
 <template>
-<div class="fixed inset-0 bg-pebble overflow-auto">
+<Layout class="fixed inset-0 bg-pebble overflow-auto">
   <RouterView />
-</div>
+</Layout>
 </template>

@@ -23,6 +23,7 @@ export const useConnectionStore = defineStore('connection', () => {
     originBracketId.value = id
   }
 
+
   return {
     originId,
     setOriginId,

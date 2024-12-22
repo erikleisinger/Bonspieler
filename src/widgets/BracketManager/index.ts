@@ -1,1 +1,1 @@
-export { BracketManager, BracketManagerSimple } from './ui'
+export { BracketManager, BracketManagerSimple, BracketEditor } from './ui'

@@ -9,7 +9,7 @@
   <div v-if="showEditor" class="relative mx-4 bg-white">
     <PoolManager v-if="showEditor === 'pool'"></PoolManager>
 
-    <BracketManager v-if="showEditor === 'bracket'"></BracketManager>
+    <BracketManager v-if="showEditor === 'bracket'" editable></BracketManager>
   </div>
   <div v-else-if="showOptions" class="relative flex items-center justify-center">
     <StageSelect @select="selectStage" />
@@ -43,7 +43,7 @@
     </StageCard>
 
   </div>
-  <div v-if="showEditor" class="px-4 py-2">
+  <div v-if="showEditor" class="px-4 ">
     <div class="bg-white rounded-xl p-4 shadow-md flex justify-between">
       <Button variant="tonal" color="slate" @click="goToStart">Back</Button>
       <Button variant="primary">Save</Button>
