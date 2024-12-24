@@ -48,7 +48,9 @@
         </div>
         <div v-if="editable" class="sticky bottom-0 bg-white p-4 rounded-lg shadow-md z-50 flex gap-2">
           {{ deletedGameIds }} {{ deletedBracketIds }}
-          <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">Save</Button>
+          <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">
+            {{ saving ? 'Saving...' : 'Save' }}
+          </Button>
         </div>
         <div v-else />
       </div>
@@ -80,7 +82,8 @@ const props = defineProps<{
   uniqueId: string,
 }>()
 
-const { saveBracket } = useSaveBracket()
+const { saveBracket, saving } = useSaveBracket()
+
 
 const { originId, loserOriginId, originBracketId } = storeToRefs(useConnectionStore());
 const { setOriginId, setLoserOriginId, setConnectionId, setOriginBracketId } = useConnectionStore();
@@ -106,7 +109,6 @@ const {
 
 const {
   drawCount,
-  drawNumbers,
   numSheets,
   gamesBracketIndex,
   gamesIndex,
@@ -153,8 +155,8 @@ const availableGames = computed(() => {
       break;
 
     case 'viewDraw':
-      gamesArray = [...Array.from(gamesIndex.value.values()).filter(({ game }) => {
-        return `${drawNumbers.value[game.id]}` === `${selectedDraw.value}`
+      gamesArray = [...Array.from(gamesIndex.value.values()).filter(({ drawNumber }) => {
+        return `${drawNumber}` === `${selectedDraw.value}`
       }).map(({ game }) => game.id)]
       break;
 

@@ -368,7 +368,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       deletedGameIds,
       deletedBracketIds,
       drawCount,
-
       gamesBracketIndex,
       gamesIndex,
       getFullGame,
@@ -404,7 +403,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       updateGame,
       updateGameConnections,
       updateLoserConnection,
-
     }
   })
 

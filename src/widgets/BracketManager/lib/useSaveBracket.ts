@@ -1,4 +1,5 @@
 import type { BracketEvent } from "./types"
+import { ref } from 'vue'
 import { useApi } from "@/shared/composables/useApi"
 import { useBracket } from './useBracket'
 import type { Tables } from "@/shared/types/database.types"
@@ -30,7 +31,8 @@ export const useSaveBracket = () => {
         round_number: g.roundNumber,
         bracket_id: bracketId,
         y,
-        lineWidth: `${lineWidth}`
+        lineWidth: `${lineWidth}`,
+        draw_number: g.drawNumber
       }
     })).select('*')
     return data
@@ -45,7 +47,8 @@ export const useSaveBracket = () => {
         round_number: g.roundNumber,
         bracket_id: bracketId,
         y,
-        lineWidth: `${lineWidth}`
+        lineWidth: `${lineWidth}`,
+        draw_number: g.drawNumber
       }
     })).select('*')
     return data
@@ -58,8 +61,12 @@ export const useSaveBracket = () => {
     return n;
   }
 
+
+  const saving = ref(false)
+
   async function saveBracket(bracketStoreId: string, bracketGroupId: string) {
-    const { gamesIndex, gamesBracketIndex, getEditableGames, deletedGameIds, deletedBracketIds, getNumEndTeamsForBracketEvent, getNumRequiredTeamsForBracketEvent } = useBracket(bracketStoreId)
+    saving.value = true;
+    const { gamesIndex, gamesBracketIndex, getFullGame, deletedGameIds, deletedBracketIds, getNumEndTeamsForBracketEvent, getNumRequiredTeamsForBracketEvent } = useBracket(bracketStoreId)
     let bracketGames: Tables<'bracket_games'>[] = []
 
     const startTeams = getNumRequiredTeamsForBracketEvent();
@@ -81,7 +88,11 @@ export const useSaveBracket = () => {
         dbBracketId = data?.id;
       }
 
-      const gamesWithReadable = getEditableGames(games)
+      const gamesWithReadable = games.map(({ id }) => getFullGame(id)).map(({ game, readableId, drawNumber }) => ({
+        ...game,
+        readableId,
+        drawNumber,
+      }))
       const insertedGames = await insertBracketGames(gamesWithReadable.filter(({ id }) => isLocalId(id)), dbBracketId) || []
       const upsertedGames = await upsertBracketGames(gamesWithReadable.filter(({ id }) => !isLocalId(id)), dbBracketId) || []
       bracketGames = [...bracketGames, ...insertedGames, ...upsertedGames]
@@ -99,11 +110,10 @@ export const useSaveBracket = () => {
         loser_bracket_game_id: loserConnection,
       }
     }))
-    console.log(deletedBracketIds)
     await useApi().from('bracket_games').delete().in('id', deletedGameIds)
     await useApi().from('brackets').delete().in('id', deletedBracketIds)
-
+    saving.value = false;
   }
 
-  return { saveBracket }
+  return { saveBracket, saving }
 }

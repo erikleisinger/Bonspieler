@@ -15,7 +15,7 @@ export const useGetBracket = () => {
       return {
         ...all,
         [current.id]: bracketGames?.filter(({ bracket_id }) => bracket_id === current.id).map((g) => {
-          const { id, lineWidth, y, winner_bracket_game_id, loser_bracket_game_id, round_number, readable_id } = g;
+          const { id, lineWidth, y, winner_bracket_game_id, loser_bracket_game_id, round_number, readable_id, draw_number } = g;
           return {
             id: `${id}`,
             transform: {
@@ -28,7 +28,8 @@ export const useGetBracket = () => {
               loser: !loser_bracket_game_id ? null : `${loser_bracket_game_id}`,
             },
             roundNumber: round_number,
-            readableId: readable_id
+            readableId: readable_id,
+            drawNumber: draw_number
           }
         })
       }

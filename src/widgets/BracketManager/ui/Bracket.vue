@@ -189,7 +189,7 @@ const containerHeight = ref(500)
 const setContainerHeight = useThrottleFn(() => {
   if (!props.editable) return;
   nextTick(() => {
-    const lowestEl = props.games.reduce((lowest, { id }) => {
+    const lowestEl = games.value.reduce((lowest, { id }) => {
       const el = document.getElementById(getBracketGameElementId(props.uniqueId, id))
       if (!el) return lowest;
       const rect = el.getBoundingClientRect();
