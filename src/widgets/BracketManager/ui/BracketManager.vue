@@ -4,22 +4,18 @@
     <div class="relative">
       <div class="absolute inset-0 overflow-auto">
         <div class="bg-white p-4 rounded-xl ">
-          <NumTeamsDisplay :bracketId="uniqueId" />
+          <NumTeamsDisplay :bracketId="uniqueId" v-if="editable" />
           <div class="bg-gray-100 p-2 px-4 rounded-xl">
             <div class="font-semibold mb-2">
               <div>Draws ({{ drawCount }})</div>
-
             </div>
             <div class="bg-blue-500 p-2 rounded-lg mb-2  relative" v-if="editable">
               <div class="flex mb-2 gap-2 items-center">
                 <div class="text-xs">🔧</div>
-
                 <div class="font-semibold text-white">
                   Options
                 </div>
-
               </div>
-
               <div class="flex flex-col bg-white rounded-lg  px-2 py-1">
                 <label for="sheetsinput" class="text-sm text-slate-700">Sheets</label>
                 <Input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
@@ -27,25 +23,20 @@
                 </Input>
               </div>
             </div>
-
             <DrawList :bracketId="uniqueId" :modelValue="selectedDraw" @update:modelValue="selectDraw" />
           </div>
         </div>
       </div>
     </div>
-
     <div class="relative">
       <div class="grid grid-rows-[auto,_1fr,_auto]  overflow-auto gap-4 absolute inset-0">
         <div class="flex gap-2 p-2 bg-gray-100  rounded-xl sticky top-0 z-30 shadow-md ">
-
           <BracketListEditor v-model:games="games" :editable="editable" :storeId="uniqueId">
           </BracketListEditor>
         </div>
-
         <div class="relative">
-
           <div class="relative rounded-xl mb-8" v-for="bracket, index in Object.keys(games)" :key="bracket"
-            :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'" :id="getBracketElementId(bracket)">
+            :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'">
             <BracketEditable v-if="editable && !loading" class="rounded-xl min-h-[600px]"
               :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
               :uniqueId="bracket" @clear="reset" />
@@ -56,20 +47,15 @@
                 drawNumber: drawNumbers[g.id]
               }))" :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
               :uniqueId="bracket" @clear="reset" />
-
-
-
           </div>
-
         </div>
         <div v-if="editable" class="sticky bottom-0 bg-white p-4 rounded-lg shadow-md z-50 flex gap-2">
-
           <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">Save</Button>
         </div>
         <div v-else />
       </div>
     </div>
-    <BracketGamePopup v-if="editable" :bracketId="uniqueId" />
+    <BracketGamePopup v-if="editable" :bracketId="uniqueId" @delete="reset" />
   </div>
 </div>
 </template>
@@ -78,23 +64,17 @@ import { ref, computed, nextTick, onMounted } from 'vue'
 import Bracket from './Bracket.vue'
 import BracketEditable from './BracketEditable.vue'
 import BracketGamePopup from './BracketGamePopup.vue';
-import DrawColorIcon from '@/shared/ui/DrawColorIcon.vue';
 import DrawList from './DrawList.vue';
 import NumTeamsDisplay from './NumTeamsDisplay.vue';
-import NumberBubble from '@/shared/ui/NumberBubble.vue';
-import Trophy from '@/shared/icons/Trophy.vue';
-import BrokenHeart from '@/shared/icons/BrokenHeart.vue';
 import Input from '@/shared/ui/Input.vue';
 import { useConnectionStore } from '../lib/useConnection';
 import { storeToRefs } from 'pinia';
 import BracketListEditor from './BracketListEditor.vue'
 import { useBracket } from '../lib/useBracket';
-import { useBracketElement } from '../lib/useBracketElement';
 import type { BracketGame } from './lib/types'
 import { useEditableBracket } from '../lib/useEditableBracket';
 import { useSaveBracket } from '../lib/useSaveBracket';
 import { useGetBracket } from '../lib/useGetBracket';
-import { scrollToElement } from '@/shared/utils/scrollToElement';
 import Button from '@/shared/ui/Button.vue';
 const props = defineProps<{
   bracketGroupId?: string,
@@ -111,7 +91,6 @@ const bracketStore = useBracket(props.uniqueId);
 
 const {
   addWinnerConnection,
-  deleteGameFromBracket,
   getAllOriginConnections,
   getAvailableLoserGames,
   getAvailableWinnerGames,
@@ -123,12 +102,8 @@ const {
   getRoundsForBracket,
   hasLessThanTwoOriginConnections,
   initGames,
-  removeWinnerConnection,
-  setNumSheets,
   setSelectedGameId,
   updateLoserConnection,
-
-
 } = bracketStore
 
 const {
@@ -139,26 +114,6 @@ const {
   games,
   selectedGameId,
 } = storeToRefs(bracketStore);
-
-const { getConnectableGameElementId, getBracketElementId } = useBracketElement()
-
-function scrollToGame(gameId: string) {
-  if (!gameId) return;
-  const gameBracketId = getGameBracketId(gameId)
-  const elementid = getConnectableGameElementId(gameBracketId, gameId)
-  scrollToElement('#' + elementid)
-}
-
-function scrollToSelectedGameWinner() {
-  const { winner } = selectedGame.value?.connections || {}
-  if (!winner) return;
-  scrollToGame(winner)
-}
-function scrollToSelectedGameLoser() {
-  const { loser } = selectedGame.value?.connections || {}
-  if (!loser) return;
-  scrollToGame(loser)
-}
 
 const editableBracketStore = useEditableBracket(props.uniqueId)()
 
@@ -253,17 +208,6 @@ async function onGameSelect(game: BracketGame) {
       await viewGame(game)
       break;
   }
-}
-
-function removeLoserConnection() {
-  updateLoserConnection(selectedGameId.value, '')
-}
-
-const selectedGame = computed(() => getGameById(selectedGameId.value))
-
-function deleteGame(gameId, bracketId) {
-  deleteGameFromBracket(gameId, bracketId)
-  reset()
 }
 
 const selectedDraw = ref<number | null>(null)

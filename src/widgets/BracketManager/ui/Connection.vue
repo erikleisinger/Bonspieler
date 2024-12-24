@@ -21,8 +21,9 @@
     'z-10': !opaque,
     'z-[0]': opaque
   }">
-    <div class="absolute  top-0 bottom-0 w-[3px] hover:bg-blue-500 left-[-3px] cursor-ew-resize"
-      @mousedown="startEwResize" v-if="connectionId" />
+    <div class="absolute top-0 bottom-0 w-[3px]  left-[-3px] " :class="{
+      'hover:bg-blue-500 cursor-ew-resize': editable
+    }" @mousedown="startEwResize" v-if="connectionId" />
   </div>
 </div>
 </template>
@@ -31,6 +32,7 @@ import { useElementBounding } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 const props = withDefaults(defineProps<{
   connectionId?: string;
+  editable?: boolean;
   lineWidth?: number | string;
   opaque?: boolean;
 }>(),
@@ -98,6 +100,7 @@ function ewMouseUp() {
   document.removeEventListener('mouseup', ewMouseUp)
 }
 function startEwResize() {
+  if (!props.editable) return;
   document.addEventListener('mousemove', ewMouseMove)
   document.addEventListener('mouseup', ewMouseUp)
 }

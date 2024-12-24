@@ -1,7 +1,7 @@
 <template>
 <Bracket editable :mode="mode" :rounds="editedRounds" :games="editedGames" :availableGames="availableGames"
-  :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId" @selectGame="emit('selectGame', $event)"
-  @update:dragPosition="onDragUpdate" @click="emit('clear', $event)">
+  @updateLineWidth="onUpdateLineWidth" :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId"
+  @selectGame="emit('selectGame', $event)" @update:dragPosition="onDragUpdate" @click="emit('clear', $event)">
   <div class="fixed  pointer-events-none" :id="mouseShadowId" :style="{
     top: `${mouseY}px`,
     left: `${mouseX}px`,
@@ -50,8 +50,8 @@
     </div>
   </template>
   <template #append-connection="{ winnerGame, loserGame, game }">
-    <Connection v-if="originId === getConnectableGameElementId(uniqueId, game.id)" :connectionId="connectionId"
-      @updateLineWidth="onUpdateLineWidth"
+    <Connection v-if="originId === getConnectableGameElementId(uniqueId, game.id)" :connectionId="connectionId" editable
+      class="EEEEECTION"
       :opaque="(availableGames && !!availableGames.length && !isGameAvailable(game)) || loserGame === game.id || winnerGame === game.id" />
   </template>
 
@@ -206,7 +206,6 @@ function onHover({ game, isHovered }) {
   } else {
     setConnectionId(mouseShadowId.value);
   }
-
 }
 
 onMounted(() => {
@@ -231,8 +230,19 @@ function onDragUpdate({
   updateGame(updatedGame);
 }
 
-function onUpdateLineWidth(gameId, e) {
-  console.log('UPDATE LINE WIDTH')
-  console.log(gameId, e)
+function onUpdateLineWidth({
+  gameId,
+  newWidth
+}) {
+  const game = getGameById(gameId);
+  const updatedGame = {
+    ...game,
+    transform: {
+      ...game.transform,
+      lineWidth: newWidth,
+    }
+  }
+  updateGame(updatedGame);
 }
+
 </script>

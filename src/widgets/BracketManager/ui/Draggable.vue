@@ -37,7 +37,7 @@ function generateUniqueId() {
 
 const boundaryBounding = useElementBounding(document.querySelector(props.boundaryElementSelector))
 onMounted(() => {
-  if (!document.querySelector(props.boundaryElementSelector)) return;
+
   boundaryBounding.update()
 })
 

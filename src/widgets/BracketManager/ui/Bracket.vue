@@ -1,7 +1,7 @@
 <template>
 <div class="p-6 relative" :style="{
   height: `${containerHeight}px`,
-}">
+}" :id="getBracketElementId(uniqueId)">
   <slot />
   <div class="absolute inset-4 gap-8  flex w-fit">
     <div class="flex flex-col min-w-[300px] relative " v-for="round in rounds" :key="round">
@@ -68,7 +68,10 @@
               <slot name="append-game" v-bind:game="game" v-bind:round="round" />
               <div class="relative grow ">
                 <div class="absolute top-0 bottom-0 m-auto h-[2px]" v-if="connectionsVisible">
-                  <Connection :connectionId="getConnectionId(game)" @updateLineWidth="emit('updateLineWidth', $event)"
+                  <Connection :connectionId="getConnectionId(game)" @updateLineWidth="emit('updateLineWidth', {
+                    newWidth: $event,
+                    gameId: game.id
+                  })" :editable="editable"
                     :opaque="(availableGames && !!availableGames.length && !isGameAvailable(game)) || loserGame === game.id || winnerGame === game.id"
                     :lineWidth="game.transform.lineWidth" />
                   <slot name="append-connection" v-bind:winnerGame="winnerGame" v-bind:loserGame="loserGame"
@@ -95,9 +98,7 @@ import BracketGame from './BracketGame.vue'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import WinnerIconBubble from './WinnerIconBubble.vue'
 import LoserIconBubble from './LoserIconBubble.vue'
-import Trophy from '@/shared/icons/Trophy.vue'
 import RoundHeader from './RoundHeader.vue'
-import BrokenHeart from '@/shared/icons/BrokenHeart.vue'
 import { watch, ref, nextTick, onMounted, computed } from 'vue'
 import { useDraggableStore } from '../lib/useDraggable';
 import { useConnectionStore } from '../lib/useConnection'
@@ -107,7 +108,7 @@ import { useBracket } from '../lib/useBracket'
 import { useBracketElement } from '../lib/useBracketElement';
 import { useDebounceFn } from '@vueuse/core';
 
-const { getBracketRoundElementId, getConnectableGameElementId, getBracketGameElementId } = useBracketElement()
+const { getBracketRoundElementId, getConnectableGameElementId, getBracketGameElementId, getBracketElementId } = useBracketElement()
 
 
 
@@ -117,7 +118,6 @@ const props = defineProps({
   games: Array,
   editable: Boolean,
   bracketId: String,
-  editable: Boolean,
   mode: String,
   selectedGameId: {
     type: String,
