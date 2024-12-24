@@ -1,5 +1,5 @@
 <template>
-<div class="p-6 relative" :style="{
+<div class="p-6 relative transition-all" :style="{
   height: `${containerHeight}px`,
 }" :id="getBracketElementId(uniqueId)">
   <slot />
@@ -11,7 +11,7 @@
       </RoundHeader>
       <div class="flex flex-col grow relative z-[1]" :id="getBracketRoundElementId(uniqueId, round)">
         <Draggable :yAxis="!!editable" class="absolute" handle="handle"
-          v-for="game in editedGames.filter(({ roundNumber }) => roundNumber === round)"
+          v-for="game in games.filter(({ roundNumber }) => roundNumber === round)"
           :id="getBracketGameElementId(uniqueId, game.id)"
           :boundaryElementSelector="'#' + getBracketRoundElementId(uniqueId, round)" :x="game.transform.x"
           :y="game.transform.y" @update="onDragUpdate(game.id, $event)" :key="game.id" :class="{
@@ -106,11 +106,9 @@ import { useDrawColor } from '@/shared/composables/useDrawColor'
 import { storeToRefs } from 'pinia';
 import { useBracket } from '../lib/useBracket'
 import { useBracketElement } from '../lib/useBracketElement';
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useThrottleFn } from '@vueuse/core';
 
 const { getBracketRoundElementId, getConnectableGameElementId, getBracketGameElementId, getBracketElementId } = useBracketElement()
-
-
 
 const { getDrawColor } = useDrawColor()
 
@@ -173,7 +171,6 @@ watch(connectionId, (val) => {
   }
 })
 
-const editedGames = computed(() => props.games)
 
 const gamesCount = computed(() => (props.games || []).length)
 
@@ -200,7 +197,6 @@ const emitDragUpdate = useDebounceFn((gameId, updates) => {
 }, 100)
 
 function onDragUpdate(gameId, updates) {
-
   emitDragUpdate(gameId, updates)
   setContainerHeight();
 }
@@ -211,9 +207,10 @@ function isGameAvailable(game) {
 
 const containerHeight = ref(500)
 
-function setContainerHeight() {
+const setContainerHeight = useThrottleFn(() => {
+  if (!props.editable) return;
   nextTick(() => {
-    const lowestEl = editedGames.value.reduce((lowest, { id }) => {
+    const lowestEl = props.games.reduce((lowest, { id }) => {
       const el = document.getElementById(getBracketGameElementId(props.uniqueId, id))
       if (!el) return lowest;
       const rect = el.getBoundingClientRect();
@@ -224,14 +221,15 @@ function setContainerHeight() {
     containerHeight.value = lowestEl + 200
   })
 
-}
+}, 10)
 
 watch(gamesCount, () => {
+
   setContainerHeight()
 })
 
-
 function onHover(game, isHovered) {
+  if (!props.editable) return;
   emit('hover', {
     game,
     isHovered

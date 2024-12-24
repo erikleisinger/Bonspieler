@@ -33,9 +33,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       return Object.values(games.value).flat()
     })
 
-
-
-
     function reset() {
       games.value = {};
       gamesIndex.value = new Map([]);
@@ -292,9 +289,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       const thisBracket = getGameBracketId(gameId)
       const { roundNumber: thisRoundNumber } = game;
       return allGames.value.filter((game: BracketGame) => {
-        if (game.id === 'idba29196') {
-          console.log('game', game, getAllOriginConnections(game))
-        }
         if (getAllOriginConnections(game)?.length > 1) return false;
         const { roundNumber } = game;
         if (roundNumber > thisRoundNumber) return true;
