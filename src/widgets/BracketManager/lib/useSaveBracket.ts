@@ -59,19 +59,18 @@ export const useSaveBracket = () => {
   }
 
   async function saveBracket(bracketStoreId: string, bracketGroupId: string) {
-    const { games, gamesIndex, getEditableGames, deletedGameIds, deletedBracketIds, getNumEndTeamsForBracketEvent, getNumRequiredTeamsForBracketEvent } = useBracket(bracketStoreId)
+    const { gamesIndex, gamesBracketIndex, getEditableGames, deletedGameIds, deletedBracketIds, getNumEndTeamsForBracketEvent, getNumRequiredTeamsForBracketEvent } = useBracket(bracketStoreId)
     let bracketGames: Tables<'bracket_games'>[] = []
 
-    const allGames = Object.values(games).flat();
-    const startTeams = getNumRequiredTeamsForBracketEvent(allGames);
-    const endTeams = getNumEndTeamsForBracketEvent(allGames)
+    const startTeams = getNumRequiredTeamsForBracketEvent();
+    const endTeams = getNumEndTeamsForBracketEvent()
 
     await useApi().from('bracket_groups').update({
       start_team_count: startTeams,
       end_team_count: endTeams
     }).eq('id', bracketGroupId)
 
-    await Object.keys(games).reduce(async (prom, bracketId) => {
+    await Array.from(gamesBracketIndex.entries()).reduce(async (prom, [bracketId, games]) => {
       await prom
       let dbBracketId;
       if (isLocalId(bracketId)) {
@@ -82,7 +81,7 @@ export const useSaveBracket = () => {
         dbBracketId = data?.id;
       }
 
-      const gamesWithReadable = getEditableGames(games[bracketId])
+      const gamesWithReadable = getEditableGames(games)
       const insertedGames = await insertBracketGames(gamesWithReadable.filter(({ id }) => isLocalId(id)), dbBracketId) || []
       const upsertedGames = await upsertBracketGames(gamesWithReadable.filter(({ id }) => !isLocalId(id)), dbBracketId) || []
       bracketGames = [...bracketGames, ...insertedGames, ...upsertedGames]

@@ -19,7 +19,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue'])
 
 const bracketStore = useBracket(props.bracketId)
-const { drawNumbers, drawCount } = storeToRefs(bracketStore)
+const { drawCount, gamesIndex } = storeToRefs(bracketStore)
 
 const selectedDraw = computed({
   get() {
@@ -35,16 +35,18 @@ function selectDraw(drawNum: number) {
 }
 
 const gamesPerDraw = computed(() => {
-  return Object.entries(drawNumbers.value).reduce((all, [gameId, drawNum]) => {
-    if (!all[drawNum]) {
+  return Array.from(gamesIndex.value.entries()).reduce((all, [gameId, {
+    drawNumber
+  }]) => {
+    if (!all[drawNumber]) {
       return {
         ...all,
-        [drawNum]: [gameId]
+        [drawNumber]: [gameId]
       }
     }
     return {
       ...all,
-      [drawNum]: [...all[drawNum], gameId]
+      [drawNumber]: [...all[drawNumber], gameId]
     }
   }, {})
 })

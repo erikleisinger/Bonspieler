@@ -17,12 +17,11 @@
             class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
             @click="scrollToSelectedGameWinner">
             <WinnerIconBubble />
-            <DrawColorIcon class="w-[12px] h-[12px] " v-if="selectedGame?.connections?.winner"
-              :drawNumber="drawNumbers[selectedGame.connections.winner]" />
-            <div>{{ selectedGame?.connections?.winner || 'No winning game set' }}</div>
+            <DrawColorIcon class="w-[12px] h-[12px] " v-if="winnerConnectionDrawNumber"
+              :drawNumber="winnerConnectionDrawNumber" />
+            <div>{{ connections.winner || 'No winning game set' }}</div>
           </div>
-          <RemoveButton @click="removeWinnerConnection(selectedGameId)"
-            v-if="selectedGame && selectedGame.connections?.winner" />
+          <RemoveButton @click="removeWinnerConnection(selectedGameId)" v-if="connections.winner" />
           <AddButton v-else @click="beginConnect(selectedGameId)"></AddButton>
 
         </div>
@@ -31,12 +30,11 @@
             class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
             @click="scrollToSelectedGameLoser">
             <LoserIconBubble />
-            <DrawColorIcon class="w-[12px] h-[12px] " v-if="selectedGame?.connections?.loser"
-              :drawNumber="drawNumbers[selectedGame.connections.loser]" />
-            <div>{{ selectedGame?.connections?.loser || 'No losing game set' }}</div>
+            <DrawColorIcon class="w-[12px] h-[12px] " v-if="loserConnectionDrawNumber"
+              :drawNumber="loserConnectionDrawNumber" />
+            <div>{{ connections.loser || 'No losing game set' }}</div>
           </div>
-          <RemoveButton @click="removeLoserConnection(selectedGameId)"
-            v-if="selectedGame && selectedGame.connections?.loser" />
+          <RemoveButton @click="removeLoserConnection" v-if="connections.loser" />
           <AddButton v-else @click="beginLoserConnect" />
         </div>
 
@@ -79,15 +77,15 @@ const { mode } = storeToRefs(editableBracketStore)
 const { beginConnect, beginLoserConnect } = editableBracketStore;
 
 const bracketStore = useBracket(props.bracketId)
-const { selectedGameId, drawNumbers } = storeToRefs(bracketStore)
-const { deleteGameFromBracket, getGameById, getGameBracketId, updateLoserConnection } = bracketStore;
+const { selectedGameId, } = storeToRefs(bracketStore)
+const { deleteGameFromBracket, getFullGame, getGameBracketId, updateLoserConnection, removeWinnerConnection } = bracketStore;
 
 const { getConnectableGameElementId } = useBracketElement()
 
 const { originBracketId } = storeToRefs(useConnectionStore());
 
 
-const selectedGame = computed(() => getGameById(selectedGameId.value))
+const selectedGame = computed(() => getFullGame(selectedGameId.value))
 
 
 function scrollToGame(gameId: string) {
@@ -97,13 +95,28 @@ function scrollToGame(gameId: string) {
   scrollToElement('#' + elementid)
 }
 
+const connections = computed(() => selectedGame.value?.game?.connections || {
+  winner: '',
+  loser: '',
+})
+
+const winnerConnectionDrawNumber = computed(() => {
+  if (!connections.value.winner) return null;
+  return getFullGame(connections.value.winner)?.drawNumber
+})
+
+const loserConnectionDrawNumber = computed(() => {
+  if (!connections.value.loser) return null;
+  return getFullGame(connections.value.loser)?.drawNumber
+})
+
 function scrollToSelectedGameWinner() {
-  const { winner } = selectedGame.value?.connections || {}
+  const { winner } = connections.value || {}
   if (!winner) return;
   scrollToGame(winner)
 }
 function scrollToSelectedGameLoser() {
-  const { loser } = selectedGame.value?.connections || {}
+  const { loser } = connections.value || {}
   if (!loser) return;
   scrollToGame(loser)
 }

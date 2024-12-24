@@ -1,6 +1,6 @@
 <template>
 <div class="flex gap-2 ">
-  <div v-for="bracket, index in Object.keys(games)" :key="bracket">
+  <div v-for="bracket, index in Array.from(gamesBracketIndex.keys())" :key="bracket">
     <div v-if="!editMode" @click="onClick(bracket)"
       class="w-[150px] py-2 px-4 bg-white rounded-lg text-center hover:bg-blue-500 hover:text-white cursor-pointer">
       Bracket {{ index + 1 }}
@@ -45,7 +45,7 @@ const props = defineProps({
 })
 
 const store = useBracket(props.storeId)
-const { games } = storeToRefs(store)
+const { gamesBracketIndex } = storeToRefs(store)
 const { addBracket, deleteBracket } = store;
 
 const emit = defineEmits(['update:games',])

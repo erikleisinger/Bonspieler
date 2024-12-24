@@ -31,25 +31,23 @@
     <div class="relative">
       <div class="grid grid-rows-[auto,_1fr,_auto]  overflow-auto gap-4 absolute inset-0">
         <div class="flex gap-2 p-2 bg-gray-100  rounded-xl sticky top-0 z-30 shadow-md ">
-          <BracketListEditor v-model:games="games" :editable="editable" :storeId="uniqueId">
+          <BracketListEditor :editable="editable" :storeId="uniqueId">
           </BracketListEditor>
         </div>
         <div class="relative">
-          <div class="relative rounded-xl mb-8" v-for="bracket, index in Object.keys(games)" :key="bracket"
+          <div class="relative rounded-xl mb-8" v-for="bracket in gamesBracketIndex.keys()" :key="bracket"
             :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'">
             <BracketEditable v-if="editable && !loading" class="rounded-xl min-h-[600px]"
               :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
               :uniqueId="bracket" @clear="reset" />
 
             <Bracket v-else-if="!loading" class="rounded-xl min-h-[600px]" :rounds="getRoundsForBracket(bracket)"
-              @click="reset" :games="getEditableGames(getGamesForBracket(bracket)).map((g) => ({
-                ...g,
-                drawNumber: drawNumbers[g.id]
-              }))" :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
-              :uniqueId="bracket" @clear="reset" />
+              @click="reset" :games="getGamesForBracket(bracket)" :availableGames="availableGames"
+              @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId" :uniqueId="bracket" @clear="reset" />
           </div>
         </div>
         <div v-if="editable" class="sticky bottom-0 bg-white p-4 rounded-lg shadow-md z-50 flex gap-2">
+          {{ deletedGameIds }} {{ deletedBracketIds }}
           <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">Save</Button>
         </div>
         <div v-else />
@@ -107,12 +105,14 @@ const {
 } = bracketStore
 
 const {
-  allGames,
   drawCount,
   drawNumbers,
   numSheets,
-  games,
+  gamesBracketIndex,
+  gamesIndex,
   selectedGameId,
+  deletedBracketIds,
+  deletedGameIds,
 } = storeToRefs(bracketStore);
 
 const editableBracketStore = useEditableBracket(props.uniqueId)()
@@ -153,9 +153,9 @@ const availableGames = computed(() => {
       break;
 
     case 'viewDraw':
-      gamesArray = [...allGames.value.filter((game) => {
-        return drawNumbers.value[game.id] === `${selectedDraw.value}`
-      }).map(({ id }) => id)]
+      gamesArray = [...Array.from(gamesIndex.value.values()).filter(({ game }) => {
+        return `${drawNumbers.value[game.id]}` === `${selectedDraw.value}`
+      }).map(({ game }) => game.id)]
       break;
 
     default:

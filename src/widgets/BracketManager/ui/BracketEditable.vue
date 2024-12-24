@@ -1,5 +1,5 @@
 <template>
-<Bracket editable :mode="mode" :rounds="editedRounds" :games="editedGames" :availableGames="availableGames"
+<Bracket editable :mode="mode" :rounds="editedRounds" :availableGames="availableGames"
   @updateLineWidth="onUpdateLineWidth" :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId"
   @selectGame="emit('selectGame', $event)" @update:dragPosition="onDragUpdate" @click="emit('clear', $event)">
   <div class="fixed  pointer-events-none" :id="mouseShadowId" :style="{
@@ -105,7 +105,6 @@ const { setOriginId, setConnectionId } = useConnectionStore();
 
 const bracketStore = useBracket(props.bracketId)
 const { addGame, updateGame, getGameById, getGamesForBracket, setGamesForBracket, getEditableGames, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket } = bracketStore;
-const { drawNumbers } = storeToRefs(bracketStore)
 
 const editableBracketStore = useEditableBracket(props.bracketId)();
 const { beginConnect } = editableBracketStore
@@ -175,17 +174,7 @@ function getConnectionId(game) {
 
 const maxRound = computed(() => editedRounds.value[editedRounds.value.length - 1])
 
-const editedGames = computed({
-  get() {
-    return getEditableGames(Array.from(getGamesForBracket(props.uniqueId)).map((g) => ({
-      ...g,
-      drawNumber: drawNumbers.value[g.id]
-    })))
-  },
-  set(newGames) {
-    setGamesForBracket(props.uniqueId, newGames)
-  }
-})
+const editedGames = computed(() => getGamesForBracket(props.uniqueId))
 
 function removeRound(round) {
   removeRoundFromBracket(round, props.uniqueId)

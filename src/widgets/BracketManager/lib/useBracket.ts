@@ -1,8 +1,7 @@
-import type { BracketEvent, BracketGame, BracketGameWithOrigins, BracketGameConnections } from './types'
+import type { BracketGame, BracketGameWithOrigins, BracketGameConnections } from './types'
 import { ref, computed, watch } from 'vue'
 import { useUniqueId } from '@/shared/composables/useUniqueId';
 import { defineStore } from 'pinia'
-import { useRefHistory } from '@vueuse/core';
 import { useSchedule } from './useSchedule';
 const defaultInitialGames = {
   [useUniqueId()]: [],
@@ -24,49 +23,42 @@ export const useBracket = (id: string = useUniqueId()) => {
     const gamesIndex = ref<Map<string, {
       game: BracketGame,
       bracketId: string,
+      origins: {
+        winner: BracketGameConnections,
+        loser: BracketGameConnections
+      },
+      readableId?: string,
+      drawNumber: number
     }>>(new Map([]));
 
     const gamesBracketIndex = ref<Map<string, BracketGame[]>>(new Map([]));
-    const games = ref<BracketEvent>({});
 
     const allGames = computed(() => {
-      return Object.values(games.value).flat()
+      return Array.from(gamesIndex.value.values()).map(({ game }) => game)
     })
 
+    const drawNumbers = ref({})
+
     function reset() {
-      games.value = {};
       gamesIndex.value = new Map([]);
       gamesBracketIndex.value = new Map([]);
     }
 
 
     function initGames(initialGames = defaultInitialGames) {
-      Object.keys(initialGames).forEach((bracket: string) => {
-        const gamesForBracket = initialGames[bracket];
-        games.value[bracket] = [];
-        setGamesForBracket(gamesForBracket, bracket)
-
-        gamesForBracket.forEach((game) => {
-          gamesIndex.value.set(game.id, {
-            game,
-            bracketId: bracket,
-          })
-          gamesBracketIndex.value.set(bracket, gamesForBracket)
-        })
-      })
+      Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket))
     }
 
     function addBracket() {
       const id = useUniqueId();
-      games.value[id] = [];
+      setGamesForBracket([], id);
     }
 
     const deletedBracketIds = ref<string[]>([])
     function deleteBracket(bracketIdToDelete: string) {
-      const gamesClone = { ...games.value };
-      const bracketGames = gamesClone[bracketIdToDelete];
-      Object.keys(gamesClone).forEach((bracketId) => {
-        const newGames = [...gamesClone[bracketId]].map((g) => ({
+      const bracketGames = gamesBracketIndex.value.get(bracketIdToDelete) || [];
+      gamesBracketIndex.value.forEach((_, bracketId) => {
+        const newGames = (gamesBracketIndex.value.get(bracketId) || []).map((g) => ({
           ...g,
           connections: {
             winner: bracketGames.find(({ id }) => id === g.connections.winner) ? '' : g.connections.winner,
@@ -75,7 +67,6 @@ export const useBracket = (id: string = useUniqueId()) => {
         }))
         setGamesForBracket(newGames, bracketId)
       })
-      delete games.value[bracketIdToDelete];
       gamesBracketIndex.value.delete(bracketIdToDelete)
       deletedBracketIds.value.push(bracketIdToDelete)
     }
@@ -102,19 +93,31 @@ export const useBracket = (id: string = useUniqueId()) => {
       return g
     }
 
-    function setGamesForBracket(newGames: BracketGame[], bracketId: string) {
-      if (!games.value[bracketId]) {
-        console.warn('No games found for bracket ', bracketId);
-        return;
-      }
-      games.value[bracketId] = newGames;
-      gamesBracketIndex.value.set(bracketId, newGames)
-      newGames.forEach((game) => {
-        gamesIndex.value.set(game.id, {
-          game,
-          bracketId
+    function updateDrawNumbers() {
+      getDrawNumbers()
+      allGames.value.forEach(({ id }) => {
+        gamesIndex.value.set(id, {
+          ...gamesIndex.value.get(id),
+          drawNumber: drawNumbers.value[id]
         })
       })
+    }
+
+    function setGamesForBracket(newGames: BracketGame[], bracketId: string) {
+      gamesBracketIndex.value.set(bracketId, newGames)
+      const bracketIndex = Array.from(gamesBracketIndex.value.keys()).indexOf(bracketId)
+      newGames.forEach((game, index) => {
+        gamesIndex.value.set(game.id, {
+          game,
+          bracketId,
+          origins: {
+            winner: getOriginWinnerConnections(game),
+            loser: getOriginLoserConnections(game),
+          },
+          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
+        })
+      })
+      updateDrawNumbers()
     }
 
     function getNumRequiredTeamsForBracketEvent() {
@@ -172,13 +175,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       setGamesForBracket(gamesClone, bracketId)
     }
 
-    function updateGames(newGames: BracketEvent) {
-      games.value = newGames;
-      Object.keys(newGames).forEach((bracketId) => {
-        setGamesForBracket(newGames[bracketId], bracketId)
-      })
-    }
-
     function updateGameConnections(gameId: string, connections: Partial<BracketGameConnections>, bracketId: string): BracketGame | null {
       const { winner, loser } = connections;
       const gameClone = getGameById(gameId)
@@ -225,9 +221,8 @@ export const useBracket = (id: string = useUniqueId()) => {
     }
 
     function removeConnectionsToGame(gameId: string) {
-      const eventClone = { ...games.value }
-      Object.keys(games.value).forEach((bracketId) => {
-        const gamesCopy = [...eventClone[bracketId]].map((g) => updateGameConnections(g.id, {
+      gamesBracketIndex.value.forEach((gamesList, bracketId) => {
+        const gamesCopy = [...gamesList].map((g) => updateGameConnections(g.id, {
           ...g.connections,
           winner: g.connections.winner === gameId ? '' : g.connections.winner,
           loser: g.connections.loser === gameId ? '' : g.connections.loser,
@@ -237,20 +232,22 @@ export const useBracket = (id: string = useUniqueId()) => {
     }
 
     function removeRoundFromBracket(roundNumber: number, bracketId: string) {
-
-      const eventClone = { ...games.value };
-
-      const roundGames = eventClone[bracketId].filter(({ roundNumber: rn }) => rn === roundNumber);
-      const newGamesForBracket = eventClone[bracketId].filter(({ roundNumber: rn }) => rn !== roundNumber);
+      const roundGames = gamesBracketIndex.value.get(bracketId)
+      if (!roundGames) return;
+      const filtered = roundGames.filter(({ roundNumber: rn }) => rn === roundNumber);
+      const newGamesForBracket = roundGames.filter(({ roundNumber: rn }) => rn !== roundNumber);
       setGamesForBracket(newGamesForBracket, bracketId)
-      roundGames.forEach(({ id }) => removeConnectionsToGame(id))
+      filtered.forEach(({ id }) => {
+        removeConnectionsToGame(id)
+        deletedGameIds.value.push(id)
+      })
 
     }
 
     const deletedGameIds = ref<string[]>([])
     function deleteGameFromBracket(gameId: string, bracketId: string) {
       const gameIndex = getGameIndexById(gameId, bracketId);
-      const gamesClone = [...games.value[bracketId]];
+      const gamesClone = gamesBracketIndex.value.get(bracketId) || [];
       gamesClone.splice(gameIndex, 1);
       setGamesForBracket(gamesClone, bracketId)
       gamesIndex.value.delete(gameId)
@@ -311,7 +308,8 @@ export const useBracket = (id: string = useUniqueId()) => {
     }
 
     function addGame(newGame: BracketGame, bracketId: string,) {
-      const gamesClone = [...games.value[bracketId], newGame]
+      const bracketGames = getGamesForBracket(bracketId) || []
+      const gamesClone = [...bracketGames, newGame]
       setGamesForBracket(gamesClone, bracketId)
     }
 
@@ -350,15 +348,19 @@ export const useBracket = (id: string = useUniqueId()) => {
     function setNumSheets(n: number) {
       numSheets.value = n
     }
-
-    const drawNumbers = computed(() => {
+    function getDrawNumbers() {
       const sheets = numSheets.value <= 0 ? 1 : numSheets.value;
-      return getDrawNumbersForBracketGames(allGames.value, sheets)
-    })
+      drawNumbers.value = getDrawNumbersForBracketGames(allGames.value, sheets)
+    }
+
 
     const drawCount = computed(() => {
       return getNumberOfDrawsForBracketEvent(drawNumbers.value)
     })
+
+    function getFullGame(gameId: string) {
+      return gamesIndex.value.get(gameId)
+    }
 
 
     return {
@@ -366,10 +368,10 @@ export const useBracket = (id: string = useUniqueId()) => {
       deletedGameIds,
       deletedBracketIds,
       drawCount,
-      drawNumbers,
-      games,
+
       gamesBracketIndex,
       gamesIndex,
+      getFullGame,
       loserGame,
       numSheets,
       selectedGameId,
@@ -401,7 +403,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       setSelectedGameId,
       updateGame,
       updateGameConnections,
-      updateGames,
       updateLoserConnection,
 
     }

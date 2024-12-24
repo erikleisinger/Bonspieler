@@ -20,38 +20,14 @@
           <div>
             <div class="flex m-4 relative">
               <slot name="prepend-game" />
-              <BracketGame :game="game" :data-gameid="game.id" class="cursor-pointer" @click.stop="onClick(game)"
-                :id="getConnectableGameElementId(uniqueId, game.id)" @hover="onHover(game, $event)"
-                :available="isGameAvailable(game)"
+              <BracketGame :game="getFullGame(game.id)" :data-gameid="game.id" class="cursor-pointer"
+                @click.stop="onClick(game)" :id="getConnectableGameElementId(uniqueId, game.id)"
+                @hover="onHover(game, $event)" :available="isGameAvailable(game)"
                 :opaque="availableGames && !!availableGames.length && !isGameAvailable(game)"
                 :loser="(mode === 'setLoser' && selectedGameId !== game.id && isGameAvailable(game)) || loserGame === game.id"
                 :winner="winnerGame === game.id">
 
-                <template #prepend>
-                  <div class="flex justify-between mb-2">
-                    <div class="flex gap-1 ">
-                      <NumberBubble :class="getDrawColor(game.drawNumber)"
-                        class="text-white text-xs absolute translate-y-[-25%]">
-                        <div class="mt-[1px]"> {{
-                          game.readableId }}</div>
 
-                      </NumberBubble>
-
-                    </div>
-
-                    <div class="text-xs text-right rounded-lg  w-fit  px-2  text-red-500">
-                      <div v-if="game.connections.loser">
-                        Loser {{ game.connections.loser }}
-
-
-                      </div>
-                      <div v-else>
-                        Loser out
-                      </div>
-                    </div>
-                  </div>
-
-                </template>
                 <WinnerIconBubble
                   class="bg-amber-500 absolute left-0 top-0 translate-x-[-40%] translate-y-[-40%] transition-all"
                   :class="{
@@ -113,7 +89,6 @@ const { getBracketRoundElementId, getConnectableGameElementId, getBracketGameEle
 const { getDrawColor } = useDrawColor()
 
 const props = defineProps({
-  games: Array,
   editable: Boolean,
   bracketId: String,
   mode: String,
@@ -130,6 +105,10 @@ const props = defineProps({
 })
 const bracketStore = useBracket(props.bracketId);
 const { winnerGame, loserGame } = storeToRefs(bracketStore);
+const { getGamesForBracket, getFullGame } = bracketStore;
+
+const games = computed(() => getGamesForBracket(props.uniqueId));
+
 
 
 const emit = defineEmits(['selectGame', 'clear', 'hover', 'update:dragPosition', 'updateLineWidth'])
@@ -172,7 +151,7 @@ watch(connectionId, (val) => {
 })
 
 
-const gamesCount = computed(() => (props.games || []).length)
+const gamesCount = computed(() => (games.value || []).length)
 
 function onClick(game) {
   emit('selectGame', game)

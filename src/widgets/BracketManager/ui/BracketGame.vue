@@ -6,7 +6,27 @@
   'opacity-30': opaque,
 
 }">
-  <slot name="prepend" />
+  <div class="flex justify-between mb-2">
+    <div class="flex gap-1 ">
+      <NumberBubble :class="getDrawColor(game.drawNumber)" class="text-white text-xs absolute translate-y-[-25%]">
+        <div class="mt-[1px]"> {{
+          game.readableId }}</div>
+
+      </NumberBubble>
+
+    </div>
+
+    <div class="text-xs text-right rounded-lg  w-fit  px-2  text-red-500">
+      <div v-if="connections.loser">
+        Loser {{ connections.loser }}
+
+
+      </div>
+      <div v-else>
+        Loser out
+      </div>
+    </div>
+  </div>
   <div class="bg-gray-100 rounded-lg overflow-hidden">
     <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] py-1 hover:bg-gray-200 px-2">
       {{
@@ -21,6 +41,8 @@
 <script setup lang="ts">
 import { useElementHover } from '@vueuse/core';
 import { ref, watch, computed } from 'vue'
+import { useDrawColor } from '@/shared/composables/useDrawColor'
+import NumberBubble from '@/shared/ui/NumberBubble.vue';
 const props = defineProps<{
   available?: boolean,
   opaque?: boolean,
@@ -28,6 +50,8 @@ const props = defineProps<{
   loser?: boolean;
   winner?: boolean;
 }>()
+
+const { getDrawColor } = useDrawColor()
 
 const el = ref(null)
 const emit = defineEmits(['hover'])
@@ -55,5 +79,9 @@ const teams = computed(() => {
   return t
 
 
+})
+
+const connections = computed(() => {
+  return props.game?.game?.connections || {};
 })
 </script>
