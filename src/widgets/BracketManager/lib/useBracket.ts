@@ -1,7 +1,9 @@
 import type { BracketEvent, BracketGame, BracketGameWithOrigins, BracketGameConnections } from './types'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useUniqueId } from '@/shared/composables/useUniqueId';
 import { defineStore } from 'pinia'
+import { useRefHistory } from '@vueuse/core';
+import { useSchedule } from './useSchedule';
 const defaultInitialGames = {
   [useUniqueId()]: [],
 }
@@ -27,11 +29,26 @@ export const useBracket = (id: string = useUniqueId()) => {
     const gamesBracketIndex = ref<Map<string, BracketGame[]>>(new Map([]));
     const games = ref<BracketEvent>({});
 
+    const allGames = computed(() => {
+      return Object.values(games.value).flat()
+    })
+
+
+
+
+    function reset() {
+      games.value = {};
+      gamesIndex.value = new Map([]);
+      gamesBracketIndex.value = new Map([]);
+    }
+
 
     function initGames(initialGames = defaultInitialGames) {
       Object.keys(initialGames).forEach((bracket: string) => {
-
         const gamesForBracket = initialGames[bracket];
+        games.value[bracket] = [];
+        setGamesForBracket(gamesForBracket, bracket)
+
         gamesForBracket.forEach((game) => {
           gamesIndex.value.set(game.id, {
             game,
@@ -42,11 +59,33 @@ export const useBracket = (id: string = useUniqueId()) => {
       })
     }
 
-
-
-    function getAllEventGames() {
-      return Object.values(games.value).flat()
+    function addBracket() {
+      const id = useUniqueId();
+      games.value[id] = [];
     }
+
+    const deletedBracketIds = ref<string[]>([])
+    function deleteBracket(bracketIdToDelete: string) {
+      const gamesClone = { ...games.value };
+      const bracketGames = gamesClone[bracketIdToDelete];
+      Object.keys(gamesClone).forEach((bracketId) => {
+        const newGames = [...gamesClone[bracketId]].map((g) => ({
+          ...g,
+          connections: {
+            winner: bracketGames.find(({ id }) => id === g.connections.winner) ? '' : g.connections.winner,
+            loser: bracketGames.find(({ id }) => id === g.connections.loser) ? '' : g.connections.loser,
+          }
+        }))
+        setGamesForBracket(newGames, bracketId)
+      })
+      delete games.value[bracketIdToDelete];
+      gamesBracketIndex.value.delete(bracketIdToDelete)
+      deletedBracketIds.value.push(bracketIdToDelete)
+    }
+
+
+
+
 
     function getGameById(gameId: string): BracketGame | null {
       const { game } = gamesIndex.value.get(gameId) || {}
@@ -81,13 +120,17 @@ export const useBracket = (id: string = useUniqueId()) => {
       })
     }
 
-    function getNumRequiredTeamsForBracketEvent(games: BracketGame[]) {
-      let num = games.length * 2;
-      games.forEach(({ id }) => {
-        const numConnections = games.filter(({ connections }) => connections.winner === id || connections.loser === id)?.length
+    function getNumRequiredTeamsForBracketEvent() {
+      let num = allGames.value.length * 2;
+      allGames.value.forEach(({ id }) => {
+        const numConnections = allGames.value.filter(({ connections }) => connections.winner === id || connections.loser === id)?.length
         num -= numConnections;
       })
       return num;
+    }
+
+    function getNumEndTeamsForBracketEvent() {
+      return allGames.value.filter(({ connections }) => !connections?.winner).length
     }
 
 
@@ -104,7 +147,7 @@ export const useBracket = (id: string = useUniqueId()) => {
             winner: getOriginWinnerConnections(game),
             loser: getOriginLoserConnections(game),
           },
-          readableId: `${numberToLetter(bracketIndex + 1)}${index + 1}`
+          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
         }
       })
 
@@ -207,6 +250,7 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     }
 
+    const deletedGameIds = ref<string[]>([])
     function deleteGameFromBracket(gameId: string, bracketId: string) {
       const gameIndex = getGameIndexById(gameId, bracketId);
       const gamesClone = [...games.value[bracketId]];
@@ -214,14 +258,15 @@ export const useBracket = (id: string = useUniqueId()) => {
       setGamesForBracket(gamesClone, bracketId)
       gamesIndex.value.delete(gameId)
       removeConnectionsToGame(gameId)
+      deletedGameIds.value.push(gameId)
     }
 
     function getOriginWinnerConnections(game: BracketGame) {
-      return getAllEventGames().filter(({ connections }) => connections.winner === game.id)
+      return allGames.value.filter(({ connections }) => connections.winner === game.id)
     }
 
     function getOriginLoserConnections(game: BracketGame) {
-      return getAllEventGames().filter(({ connections }) => connections.loser === game.id)
+      return allGames.value.filter(({ connections }) => connections.loser === game.id)
     }
 
     function getAllOriginConnections(game: BracketGame) {
@@ -232,10 +277,6 @@ export const useBracket = (id: string = useUniqueId()) => {
       return getOriginWinnerConnections(game).length < 2;
     }
 
-    function hasLessThanTwoOriginLoserConnections(game: BracketGame) {
-      return getOriginLoserConnections(game).length < 2;
-    }
-
     function hasLessThanTwoOriginConnections(game: BracketGame) {
       return getAllOriginConnections(game)?.length < 2
     }
@@ -243,14 +284,14 @@ export const useBracket = (id: string = useUniqueId()) => {
     function getConnectedGames(gameId: string) {
       const game = getGameById(gameId);
       const { winner, loser } = game?.connections
-      return getAllEventGames().filter(({ id }) => [winner, loser].includes(id))
+      return allGames.value.filter(({ id }) => [winner, loser].includes(id))
     }
 
     function getAvailableLoserGames(gameId: string) {
       const game = getGameById(gameId);
       const thisBracket = getGameBracketId(gameId)
       const { roundNumber: thisRoundNumber } = game;
-      return getAllEventGames().filter((game: BracketGame) => {
+      return allGames.value.filter((game: BracketGame) => {
         if (game.id === 'idba29196') {
           console.log('game', game, getAllOriginConnections(game))
         }
@@ -286,17 +327,8 @@ export const useBracket = (id: string = useUniqueId()) => {
       if (maxRound) {
         return Array.from(Array(maxRound).keys()).map(i => i + 1);
       }
-      return [1]
+      return []
     }
-
-    const rounds = computed(() => {
-      const maxRound = getAllEventGames().map(({ roundNumber }) => roundNumber).sort((a, b) => a - b).pop();
-      if (maxRound) {
-        return Array.from(Array(maxRound).keys()).map(i => i + 1);
-      }
-      return [1]
-    })
-
 
     const selectedGameId = ref('');
 
@@ -315,18 +347,44 @@ export const useBracket = (id: string = useUniqueId()) => {
     })
 
 
+    /** Sheets & Draws */
+
+    const { getDrawNumbersForBracketGames, getNumberOfDrawsForBracketEvent } = useSchedule()
+
+    const numSheets = ref(6)
+
+    function setNumSheets(n: number) {
+      numSheets.value = n
+    }
+
+    const drawNumbers = computed(() => {
+      const sheets = numSheets.value <= 0 ? 1 : numSheets.value;
+      return getDrawNumbersForBracketGames(allGames.value, sheets)
+    })
+
+    const drawCount = computed(() => {
+      return getNumberOfDrawsForBracketEvent(drawNumbers.value)
+    })
+
+
     return {
+      allGames,
+      deletedGameIds,
+      deletedBracketIds,
+      drawCount,
+      drawNumbers,
       games,
       gamesBracketIndex,
       gamesIndex,
       loserGame,
-      rounds,
+      numSheets,
       selectedGameId,
       winnerGame,
+      addBracket,
       addGame,
       addWinnerConnection,
       deleteGameFromBracket,
-      getAllEventGames,
+      deleteBracket,
       getAllOriginConnections,
       getAvailableLoserGames,
       getAvailableWinnerGames,
@@ -335,6 +393,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       getGameBracketId,
       getGameById,
       getGamesForBracket,
+      getNumEndTeamsForBracketEvent,
       getNumRequiredTeamsForBracketEvent,
       getRoundsForBracket,
       hasLessThanTwoOriginConnections,
@@ -342,7 +401,9 @@ export const useBracket = (id: string = useUniqueId()) => {
       removeConnectionsToGame,
       removeRoundFromBracket,
       removeWinnerConnection,
+      reset,
       setGamesForBracket,
+      setNumSheets,
       setSelectedGameId,
       updateGame,
       updateGameConnections,
@@ -352,7 +413,7 @@ export const useBracket = (id: string = useUniqueId()) => {
     }
   })
 
-  return { useBracketStore }
+  return useBracketStore()
 }
 
 

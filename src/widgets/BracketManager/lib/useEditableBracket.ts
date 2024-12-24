@@ -1,15 +1,17 @@
 import { ref } from "vue"
 import { useBracket } from "./useBracket"
 import { useConnectionStore } from "./useConnection"
+import { useBracketElement } from "./useBracketElement"
+
 import { defineStore, storeToRefs } from 'pinia'
+
 
 type BracketManagerMode = 'view' | 'viewGame' | 'viewDraw' | 'setWinner' | 'setLoser'
 
 export const useEditableBracket = (id: string) => {
 
   return defineStore('editableBracket' + id, () => {
-    const { useBracketStore } = useBracket(id)
-    const bracketStore = useBracketStore();
+    const bracketStore = useBracket(id)
     const { setOriginId, setConnectionId, setOriginBracketId, setLoserOriginId } = useConnectionStore()
     const { setSelectedGameId, getGameBracketId } = bracketStore
     const { selectedGameId } = storeToRefs(bracketStore)
@@ -19,14 +21,13 @@ export const useEditableBracket = (id: string) => {
       mode.value = newMode;
     }
 
-    function getGameElementId(gameId: string, bracketId: string) {
-      return `${bracketId}_CONNECTABLE_GAME_${gameId}`
-    }
 
+
+    const { getConnectableGameElementId } = useBracketElement()
     function beginConnect(gameId: string) {
       const bracketId = getGameBracketId(gameId)
       setBracketManagerMode('setWinner')
-      setOriginId(getGameElementId(gameId, bracketId));
+      setOriginId(getConnectableGameElementId(bracketId, gameId));
       setConnectionId('MOUSE_SHADOW_' + bracketId);
       setOriginBracketId(bracketId)
       setSelectedGameId(gameId)
@@ -39,6 +40,7 @@ export const useEditableBracket = (id: string) => {
       setOriginBracketId(bracketId)
       setSelectedGameId(selectedGameId.value)
     }
+
 
     return {
       beginConnect,

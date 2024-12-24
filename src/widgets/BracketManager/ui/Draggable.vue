@@ -37,6 +37,7 @@ function generateUniqueId() {
 
 const boundaryBounding = useElementBounding(document.querySelector(props.boundaryElementSelector))
 onMounted(() => {
+  if (!document.querySelector(props.boundaryElementSelector)) return;
   boundaryBounding.update()
 })
 
@@ -58,6 +59,7 @@ const offsetX = ref(0);
 const offsetY = ref(0)
 useEventListener(el, 'mousedown', (e) => {
   e.stopPropagation();
+  e.preventDefault()
   const path = e.composedPath();
   if (!path.some((e) => {
     if (!e?.classList) return false;
@@ -74,7 +76,7 @@ useEventListener(el, 'mousedown', (e) => {
 
 function onMouseUp() {
   setDragElementId('')
-  emit('update', { x: x.value, y: y.value })
+
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup', onMouseUp)
 }
@@ -85,8 +87,10 @@ function setYValue(val: number) {
   if (newY < 0) return;
   if (newY < boundaryBounding.top.value) return;
   y.value = val
+  emit('update', { x: x.value, y: y.value })
 }
 function onMouseMove(e) {
+  e.preventDefault()
   if (!dragging.value) return;
   const { movementX, movementY } = e;
   if (props.xAxis) x.value += movementX + ((1 - window.devicePixelRatio) * (movementY < 0 ? -1 : 1))

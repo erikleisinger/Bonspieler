@@ -1,12 +1,12 @@
 <template>
 <div class="relative flex" :class="{
-  'border-gray-200': opaque,
+  'border-gray-200 z-[0]': opaque,
   'border-gray-500': !opaque
 }">
 
   <div class="h-[3px]  border-[inherit]" :class="{
     'bg-gray-500': !opaque,
-    'bg-gray-200': opaque
+    'bg-gray-200 z-[0]': opaque
   }" :style="{
     width: `${widthStart}px`
   }" v-if="connectionId" ref="thisEl" />
@@ -18,6 +18,8 @@
   }" :class="{
     'border-b-[3px]': !connectionAbove,
     'border-t-[3px]': connectionAbove,
+    'z-10': !opaque,
+    'z-[0]': opaque
   }">
     <div class="absolute  top-0 bottom-0 w-[3px] hover:bg-blue-500 left-[-3px] cursor-ew-resize"
       @mousedown="startEwResize" v-if="connectionId" />
@@ -29,7 +31,7 @@ import { useElementBounding } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 const props = withDefaults(defineProps<{
   connectionId?: string;
-  lineWidth?: number;
+  lineWidth?: number | string;
   opaque?: boolean;
 }>(),
   {
@@ -76,7 +78,7 @@ const width = computed(() => {
 
 const connectionAbove = computed(() => (bounding.top.value + bounding.height.value / 2) < thisBounding.top.value)
 
-const widthStart = ref(props.lineWidth)
+const widthStart = ref(Number(props.lineWidth))
 
 watch(() => props.lineWidth, (val) => {
   widthStart.value = val
@@ -90,6 +92,7 @@ function ewMouseMove(e) {
 }
 
 function ewMouseUp() {
+
   emit('updateLineWidth', widthStart.value)
   document.removeEventListener('mousemove', ewMouseMove)
   document.removeEventListener('mouseup', ewMouseUp)

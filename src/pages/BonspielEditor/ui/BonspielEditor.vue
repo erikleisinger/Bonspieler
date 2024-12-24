@@ -6,47 +6,28 @@
     <div class="font-bold text-xl cursor-pointer">Bonspiel Editor</div>
     <div></div>
   </header>
-  <div v-if="showEditor" class="relative mx-4 bg-white">
-    <PoolManager v-if="showEditor === 'pool'"></PoolManager>
+  <BonspielList v-if="editorStep === 'select_event'" @select="selectBonspiel" />
+  <div v-else-if="editorStep === 'view_stage'" class="relative mx-4 bg-white">
 
-    <BracketManager v-if="showEditor === 'bracket'" editable></BracketManager>
+
+    <PoolManager v-if="selectedStage && selectedStage.type === 'pool'"></PoolManager>
+
+    <BracketManager editable :uniqueId="'bonspiel-editor'" :bracketGroupId="selectedStage.id"
+      v-if="selectedStage && selectedStage.type === 'bracket'"></BracketManager>
+
+
+
   </div>
-  <div v-else-if="showOptions" class="relative flex items-center justify-center">
+  <div v-else-if="editorStep === 'add_stage'" class="relative flex items-center justify-center">
     <StageSelect @select="selectStage" />
   </div>
-  <div class="relative flex items-center justify-center" v-else>
+  <BonspielStageList class="relative" v-else-if="editorStep === 'select_stage'" :bonspielId="selectedSpiel"
+    @addStage="onAddStage" @selectStage="editStage" />
 
-    <div v-for="stage, index in stages" :key="stage.id" class="flex relative">
-      <div class="relative">
-        <div
-          class="translate-y-[-50%] absolute left-0 right-0 top-0 z-10 text-center bg-white rounded-md mb-2 rounded-xl shadow-sm w-fit text-2xl m-auto p-2 px-4 font-bold">
-          Stage {{
-            index + 1 }}
-        </div>
-        <StageCardPool v-if="stage.type === 'pool'">
-
-        </StageCardPool>
-        <StageCardBracket v-if="stage.type === 'bracket'" />
-      </div>
-      <div class="flex items-center px-4">
-        <NumberBubble class="bg-emerald-500 text-white text-2xl" style="width: 40px; height: 40px">4</NumberBubble>
-      </div>
-    </div>
-    <StageCard class="relative" @click="showOptions = true">
-      <div class="absolute inset-0 flex justify-center items-center">
-        <div>
-          <div class="text-[5rem] text-slate-700 text-center">+</div>
-          <div class="text-center text-slate-500 translate-y-[-50%]">Add stage</div>
-        </div>
-
-      </div>
-    </StageCard>
-
-  </div>
   <div v-if="showEditor" class="px-4 ">
     <div class="bg-white rounded-xl p-4 shadow-md flex justify-between">
       <Button variant="tonal" color="slate" @click="goToStart">Back</Button>
-      <Button variant="primary">Save</Button>
+      <Button variant="primary" @click="save">Save</Button>
     </div>
 
   </div>
@@ -55,7 +36,7 @@
 </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { BonspielStage, StageType } from '../lib/types';
 import StageCard from './StageCard.vue';
 import StageCardPool from './StageCardPool.vue';
@@ -65,15 +46,27 @@ import StageSelect from './StageSelect.vue'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import { PoolManager } from '@/widgets/PoolManager';
 import { BracketManager } from '@/widgets/BracketManager';
+import { useBracket } from '@/widgets/BracketManager/lib/useBracket';
+import { useRoute, useRouter } from 'vue-router';
+import { BonspielList } from '@/features/MyBonspiels';
+import BonspielStageList from './BonspielStageList.vue';
 
-const stages = ref<BonspielStage[]>([{
-  id: '1',
-  type: 'pool',
-  name: 'Pool 1',
-}])
+const stages = ref<BonspielStage[]>([])
 const showOptions = ref(false)
 
 const showEditor = ref<StageType | null>(null)
+
+const route = useRoute();
+const router = useRouter()
+
+type EditorStep = 'select_event' | 'select_stage' | 'add_stage' | 'view_stage'
+
+const editorStep = computed(() => {
+  const { hash } = route;
+  const step = hash.split('#')[1] || null as EditorStep | null
+  if (!step) return 'select_event';
+  return step;
+})
 
 function selectStage(type: StageType) {
   showOptions.value = false
@@ -89,5 +82,37 @@ function selectStage(type: StageType) {
 function goToStart() {
   showOptions.value = false
   showEditor.value = null
+}
+
+
+const selectedSpiel = ref<string | null>(null)
+function selectBonspiel(bonspielId: string) {
+  selectedSpiel.value = bonspielId;
+  router.push({
+    hash: '#select_stage'
+  })
+
+}
+
+function onAddStage() {
+  router.push({
+    hash: '#add_stage'
+  })
+}
+
+onMounted(() => {
+  if (!selectedSpiel.value) {
+    router.push({
+      hash: ''
+    })
+  }
+})
+
+const selectedStage = ref(null)
+function editStage(stage) {
+  selectedStage.value = stage;
+  router.push({
+    hash: '#view_stage'
+  })
 }
 </script>

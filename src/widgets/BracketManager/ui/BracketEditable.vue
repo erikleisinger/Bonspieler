@@ -1,8 +1,7 @@
 <template>
-<Bracket :mode="mode" :rounds="editedRounds" :games="editedGames" :availableGames="availableGames"
-  :drawNumbers="drawNumbers" :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId"
-  @selectGame="emit('selectGame', $event)" @clear="emit('clear', $event)"
-  @viewTeamConnection="emit('viewTeamConnection', $event)" @update:dragPosition="onDragUpdate">
+<Bracket editable :mode="mode" :rounds="editedRounds" :games="editedGames" :availableGames="availableGames"
+  :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId" @selectGame="emit('selectGame', $event)"
+  @update:dragPosition="onDragUpdate" @click="emit('clear', $event)">
   <div class="fixed  pointer-events-none" :id="mouseShadowId" :style="{
     top: `${mouseY}px`,
     left: `${mouseX}px`,
@@ -34,15 +33,12 @@
       class="absolute bg-green-500 right-0 translate-x-[50%] top-0 bottom-0 text-white m-auto cursor-pointer">
       <CheckeredFlag class=" h-[20px] w-[20px] mb-[-3px]  fill-white" />
     </NumberBubble>
-    <NumberBubble v-if="!selectedGame && !originId && !getConnectionId(game) && round !== maxRound"
-      class="absolute bg-blue-500 right-0 translate-x-[50%] top-0 bottom-0 text-white m-auto cursor-pointer"
-      @click.stop="beginConnect(game.id)">+
-    </NumberBubble>
-    <NumberBubble v-if="!selectedGame && !originId && game.connections.winner"
-      @click.stop="removeWinnerConnection(game.id)"
-      class="absolute bg-white border-red-300 text-red-500 right-0 top-0 bottom-0 translate-x-[50%]  m-auto z-10 cursor-pointer">
-      -
-    </NumberBubble>
+    <AddButton class="absolute right-0 top-0 bottom-0 translate-x-[50%]  m-auto z-10"
+      v-if="!selectedGame && !originId && !getConnectionId(game) && round !== maxRound"
+      @click.stop="beginConnect(game.id)" />
+    <RemoveButton class="absolute right-0 top-0 bottom-0 translate-x-[50%]  m-auto z-10"
+      v-if="!selectedGame && !originId && game.connections.winner" @click.stop="removeWinnerConnection(game.id)" />
+
 
   </template>
 
@@ -53,17 +49,27 @@
       </div>
     </div>
   </template>
+  <template #append-connection="{ winnerGame, loserGame, game }">
+    <Connection v-if="originId === getConnectableGameElementId(uniqueId, game.id)" :connectionId="connectionId"
+      @updateLineWidth="onUpdateLineWidth"
+      :opaque="(availableGames && !!availableGames.length && !isGameAvailable(game)) || loserGame === game.id || winnerGame === game.id" />
+  </template>
+
 </Bracket>
 </template>
 <script setup>
 import Bracket from './Bracket.vue'
 import CheckeredFlag from '@/shared/icons/CheckeredFlag.vue'
+import Connection from './Connection.vue';
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
+import RemoveButton from './RemoveButton.vue'
+import AddButton from './AddButton.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useConnectionStore } from '../lib/useConnection'
 import { useMouse } from '@vueuse/core'
 import { useUniqueId } from '@/shared/composables/useUniqueId'
 import { useBracket } from '../lib/useBracket';
+import { useBracketElement } from '../lib/useBracketElement';
 import { useEditableBracket } from '../lib/useEditableBracket';
 import { storeToRefs } from 'pinia';
 
@@ -82,38 +88,41 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  drawNumbers: Object,
   uniqueId: String,
 })
 
-const emit = defineEmits(['update:selectedGameId', 'update:games', 'selectGame', 'beginConnect', 'clear', 'viewTeamConnection', 'addGame', 'setMode'])
+const emit = defineEmits(['update:selectedGameId', 'update:games', 'selectGame', 'beginConnect', 'clear', 'addGame', 'setMode'])
 
 const { x: mouseX, y: mouseY } = useMouse();
 
 const mouseShadowId = ref('MOUSE_SHADOW_' + props.uniqueId)
 
-const { originId } = storeToRefs(useConnectionStore());
+const { getBracketRoundElementId, getConnectableGameElementId, getBracketGameElementId } = useBracketElement()
+
+const { originId, connectionId } = storeToRefs(useConnectionStore());
 const { setOriginId, setConnectionId } = useConnectionStore();
 
 
-const { useBracketStore } = useBracket(props.bracketId)
-const bracketStore = useBracketStore();
-const { addGame, updateGame, getGameById, getGamesForBracket, setGamesForBracket, getEditableGames, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket, setSelectedGameId } = bracketStore;
+const bracketStore = useBracket(props.bracketId)
+const { addGame, updateGame, getGameById, getGamesForBracket, setGamesForBracket, getEditableGames, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket } = bracketStore;
+const { drawNumbers } = storeToRefs(bracketStore)
 
 const editableBracketStore = useEditableBracket(props.bracketId)();
 const { beginConnect } = editableBracketStore
 
 const editedRounds = ref([])
 
+
+
 function getNextGamePosition(roundNumber) {
-  const boundary = document.getElementById(`${props.uniqueId}_BRACKET_ROUND_${roundNumber}`).getBoundingClientRect()
+  const boundary = document.getElementById(getBracketRoundElementId(props.uniqueId, roundNumber)).getBoundingClientRect()
   const height = boundary.height;
   const { top: boundaryTop } = boundary;
 
   let yValues = Array.from(Array(Number(height.toFixed(0))).keys()).map(i => i + boundaryTop);
   const gamesForRound = editedGames.value.filter(({ roundNumber: round }) => round === roundNumber)
   gamesForRound.forEach(({ id }) => {
-    const rect = document.getElementById(`${props.uniqueId}_BRACKET_GAME_${id}`).getBoundingClientRect();
+    const rect = document.getElementById(getBracketGameElementId(props.uniqueId, id)).getBoundingClientRect();
     yValues = yValues.filter((i) => !(i > rect.top && i < rect.top + rect.height))
   })
 
@@ -161,14 +170,17 @@ function getConnectionId(game) {
   const { connections } = game;
   const { winner } = connections;
   if (!winner) return null;
-  return `${props.uniqueId}_CONNECTABLE_GAME_${winner}`;
+  return getConnectableGameElementId(props.uniqueId, winner)
 }
 
 const maxRound = computed(() => editedRounds.value[editedRounds.value.length - 1])
 
 const editedGames = computed({
   get() {
-    return getEditableGames(Array.from(getGamesForBracket(props.uniqueId)))
+    return getEditableGames(Array.from(getGamesForBracket(props.uniqueId)).map((g) => ({
+      ...g,
+      drawNumber: drawNumbers.value[g.id]
+    })))
   },
   set(newGames) {
     setGamesForBracket(props.uniqueId, newGames)
@@ -190,7 +202,7 @@ function onHover({ game, isHovered }) {
   if (!originId.value) return;
   const gameId = game.id
   if (isHovered && isGameAvailable(game)) {
-    setConnectionId(`${props.uniqueId}_CONNECTABLE_GAME_${gameId}`);
+    setConnectionId(getConnectableGameElementId(props.uniqueId, gameId));
   } else {
     setConnectionId(mouseShadowId.value);
   }
@@ -219,4 +231,8 @@ function onDragUpdate({
   updateGame(updatedGame);
 }
 
+function onUpdateLineWidth(gameId, e) {
+  console.log('UPDATE LINE WIDTH')
+  console.log(gameId, e)
+}
 </script>

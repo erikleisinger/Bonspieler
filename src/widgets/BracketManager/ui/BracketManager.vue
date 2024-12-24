@@ -4,13 +4,10 @@
     <div class="relative">
       <div class="absolute inset-0 overflow-auto">
         <div class="bg-white p-4 rounded-xl ">
-          <div class="bg-gray-100 rounded-lg px-4 py-1 text-sm mb-2">
-            <div class="flex justify-between">Starting teams: <strong>{{ requiredNumTeams }}</strong></div>
-            <div class="flex justify-between">Ending teams: <strong>{{ numEndTeams }}</strong></div>
-          </div>
+          <NumTeamsDisplay :bracketId="uniqueId" />
           <div class="bg-gray-100 p-2 px-4 rounded-xl">
             <div class="font-semibold mb-2">
-              <div>Draws ({{ numDraws }})</div>
+              <div>Draws ({{ drawCount }})</div>
 
             </div>
             <div class="bg-blue-500 p-2 rounded-lg mb-2  relative" v-if="editable">
@@ -25,179 +22,96 @@
 
               <div class="flex flex-col bg-white rounded-lg  px-2 py-1">
                 <label for="sheetsinput" class="text-sm text-slate-700">Sheets</label>
-                <input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
-                  v-model="numSheets">
-                </input>
+                <Input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
+                  v-model="numSheets" :min="1" :max="24">
+                </Input>
               </div>
             </div>
 
-            <div v-for="draw in Array.from(Array((numDraws)).keys())" :key="draw" @click="onDrawButtonClick(draw + 1)"
-              class="flex  gap-2 rounded-lg mb-1 py-1 px-2 border-2 bg-white hover:bg-gray-200 hover:text-slate-900 cursor-pointer min-w-[200px]"
-              :class="{
-
-                [`border-blue-500 border-2`]: selectedDraw === draw + 1
-              }">
-              <DrawColorIcon class="w-[12px] h-[12px] mt-[0.45rem]" :drawNumber="draw + 1" />
-              <div>
-                <div>
-                  Draw {{ draw + 1 }}
-                </div>
-                <div class="text-xs -mt-1 text-slate-600">{{ gamesPerDraw[draw + 1]?.length }} {{
-                  `game${gamesPerDraw[draw
-                    + 1]?.length >
-                    1 ? 's' : ''}` }}</div>
-              </div>
-
-            </div>
+            <DrawList :bracketId="uniqueId" :modelValue="selectedDraw" @update:modelValue="selectDraw" />
           </div>
         </div>
       </div>
     </div>
 
     <div class="relative">
-      <div class="grid grid-rows-[auto,_1fr]  overflow-auto gap-4 absolute inset-0">
+      <div class="grid grid-rows-[auto,_1fr,_auto]  overflow-auto gap-4 absolute inset-0">
         <div class="flex gap-2 p-2 bg-gray-100  rounded-xl sticky top-0 z-30 shadow-md ">
 
-          <BracketListEditor v-model:games="games" @click="scrollToBracket" :editable="editable">
+          <BracketListEditor v-model:games="games" :editable="editable" :storeId="uniqueId">
           </BracketListEditor>
         </div>
 
         <div class="relative">
 
           <div class="relative rounded-xl mb-8" v-for="bracket, index in Object.keys(games)" :key="bracket"
-            :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'" :id="`BRACKET_${bracket}`">
-            <BracketEditable v-if="editable" class="rounded-xl min-h-[600px]" :availableGames="availableGames"
-              @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId" :uniqueId="bracket"
-              :drawNumbers="drawNumbers" @clear="reset" @viewTeamConnection="onViewTeamConnection" />
+            :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'" :id="getBracketElementId(bracket)">
+            <BracketEditable v-if="editable && !loading" class="rounded-xl min-h-[600px]"
+              :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
+              :uniqueId="bracket" @clear="reset" />
 
-            <Bracket v-else class="rounded-xl min-h-[600px]" :rounds="getRoundsForBracket(bracket)"
-              :games="getEditableGames(getGamesForBracket(bracket))" :availableGames="availableGames"
-              @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId" :uniqueId="bracket"
-              :drawNumbers="drawNumbers" @clear="reset" @viewTeamConnection="onViewTeamConnection" />
+            <Bracket v-else-if="!loading" class="rounded-xl min-h-[600px]" :rounds="getRoundsForBracket(bracket)"
+              @click="reset" :games="getEditableGames(getGamesForBracket(bracket)).map((g) => ({
+                ...g,
+                drawNumber: drawNumbers[g.id]
+              }))" :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
+              :uniqueId="bracket" @clear="reset" />
 
 
 
           </div>
 
         </div>
-      </div>
-    </div>
-    <div v-if="editable" class="fixed inset-0 pointer-events-none rounded-xl  border-blue-500 z-50" :class="{
-      'border-0': !selectedGame,
-      'border-[16px]': !!selectedGame,
-    }" style="transition: border 0.2s">
-      <div class="absolute top-8 left-0 right-0 m-auto w-fit z-50 transition-transform " :class="{
-        'scale-0': !selectedGame,
-        'scale-100': !!selectedGame,
-      }">
-        <div class="p-4 bg-white font-semibold  rounded-xl shadow-md " style="pointer-events: all">
-          <div class="text-blue-500 text-lg" v-if="mode === 'viewGame'">Editing Game</div>
-          <div class="text-red-500 text-lg" v-else-if="mode === 'setLoser'">Select losing game</div>
-          <div class="text-blue-500 text-lg" v-else-if="mode === 'setWinner'">Select winning game</div>
-          <div>
-            <div v-if="selectedGame && mode === 'viewGame'" class="flex gap-2 items-center mt-2">
-              <div
-                class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
-                @click="scrollToGame(selectedGame?.connections?.winner)">
-                <NumberBubble class="bg-amber-500">
-                  <Trophy class=" h-[20px] w-[20px] mb-[-3px]  fill-white" />
+        <div v-if="editable" class="sticky bottom-0 bg-white p-4 rounded-lg shadow-md z-50 flex gap-2">
 
-                </NumberBubble>
-                <DrawColorIcon class="w-[12px] h-[12px] " v-if="selectedGame?.connections?.winner"
-                  :drawNumber="drawNumbers[selectedGame.connections.winner]" />
-                <div>{{ selectedGame?.connections?.winner || 'No winning game set' }}</div>
-              </div>
-              <NumberBubble class="text-red-500 cursor-pointer" @click="removeWinnerConnection(selectedGameId)"
-                v-if="selectedGame && selectedGame.connections?.winner">
-                -
-              </NumberBubble>
-              <NumberBubble class="bg-blue-500 text-white cursor-pointer" v-else @click="beginConnect(selectedGameId)">
-                +
-              </NumberBubble>
-            </div>
-            <div v-if="selectedGameId && mode === 'viewGame'" class="flex gap-2 items-center mt-2">
-              <div
-                class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
-                @click="scrollToGame(selectedGame?.connections?.loser)">
-                <NumberBubble class="bg-red-500 ">
-                  <BrokenHeart class=" h-[20px] w-[20px] mb-[-3px]  fill-white" />
-
-                </NumberBubble>
-                <DrawColorIcon class="w-[12px] h-[12px] " v-if="selectedGame?.connections?.loser"
-                  :drawNumber="drawNumbers[selectedGame.connections.loser]" />
-                <div>{{ selectedGame?.connections?.loser || 'No losing game set' }}</div>
-              </div>
-              <NumberBubble class="text-red-500 cursor-pointer" v-if="selectedGame && selectedGame.connections?.loser"
-                @click="removeLoserConnection">
-                -
-              </NumberBubble>
-              <NumberBubble class="bg-blue-500 text-white cursor-pointer" v-else @click="beginLoserConnect">
-                +
-              </NumberBubble>
-            </div>
-
-          </div>
-          <div class="flex justify-center rounded-lg gap-1 mt-2">
-
-
-            <div v-if="mode === 'viewGame'"
-              class="w-full max-w-[150px] text-center bg-red-50 text-red-500 rounded-md px-2 py-1 hover:bg-red-500 hover:text-white cursor-pointer"
-              @click="deleteGame(selectedGameId || loserOriginId, originBracketId)">
-              Delete game
-            </div>
-            <div v-else-if="mode === 'setWinner' || mode === 'setLoser'"
-              class="w-full max-w-[150px] text-center bg-blue-50 text-blue-500 rounded-md px-2 py-1 hover:bg-blue-500 hover:text-white cursor-pointer"
-              @click="viewGame(selectedGame)">
-              Cancel
-            </div>
-
-
-          </div>
+          <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">Save</Button>
         </div>
+        <div v-else />
       </div>
-
     </div>
+    <BracketGamePopup v-if="editable" :bracketId="uniqueId" />
   </div>
 </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { useDebounceFn } from '@vueuse/core';
+import { ref, computed, nextTick, onMounted } from 'vue'
 import Bracket from './Bracket.vue'
 import BracketEditable from './BracketEditable.vue'
+import BracketGamePopup from './BracketGamePopup.vue';
 import DrawColorIcon from '@/shared/ui/DrawColorIcon.vue';
+import DrawList from './DrawList.vue';
+import NumTeamsDisplay from './NumTeamsDisplay.vue';
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Trophy from '@/shared/icons/Trophy.vue';
 import BrokenHeart from '@/shared/icons/BrokenHeart.vue';
+import Input from '@/shared/ui/Input.vue';
 import { useConnectionStore } from '../lib/useConnection';
 import { storeToRefs } from 'pinia';
 import BracketListEditor from './BracketListEditor.vue'
 import { useBracket } from '../lib/useBracket';
-import { useSchedule } from '../lib/useSchedule';
+import { useBracketElement } from '../lib/useBracketElement';
 import type { BracketGame } from './lib/types'
-import { useUniqueId } from '@/shared/composables/useUniqueId';
 import { useEditableBracket } from '../lib/useEditableBracket';
-
+import { useSaveBracket } from '../lib/useSaveBracket';
+import { useGetBracket } from '../lib/useGetBracket';
+import { scrollToElement } from '@/shared/utils/scrollToElement';
+import Button from '@/shared/ui/Button.vue';
 const props = defineProps<{
+  bracketGroupId?: string,
   editable: boolean,
+  uniqueId: string,
 }>()
+
+const { saveBracket } = useSaveBracket()
 
 const { originId, loserOriginId, originBracketId } = storeToRefs(useConnectionStore());
 const { setOriginId, setLoserOriginId, setConnectionId, setOriginBracketId } = useConnectionStore();
 
-
-const uniqueId = useUniqueId()
-
-const {
-  useBracketStore
-} = useBracket(uniqueId);
-
-const bracketStore = useBracketStore();
+const bracketStore = useBracket(props.uniqueId);
 
 const {
   addWinnerConnection,
   deleteGameFromBracket,
-  getAllEventGames,
   getAllOriginConnections,
   getAvailableLoserGames,
   getAvailableWinnerGames,
@@ -206,50 +120,50 @@ const {
   getGameBracketId,
   getGameById,
   getGamesForBracket,
-  getNumRequiredTeamsForBracketEvent,
   getRoundsForBracket,
   hasLessThanTwoOriginConnections,
   initGames,
   removeWinnerConnection,
+  setNumSheets,
   setSelectedGameId,
-  updateGames,
   updateLoserConnection,
+
+
 } = bracketStore
 
 const {
+  allGames,
+  drawCount,
+  drawNumbers,
+  numSheets,
   games,
-  gamesIndex,
   selectedGameId,
 } = storeToRefs(bracketStore);
 
-function scrollTo(elementSelector: string) {
-  const el = document.querySelector(elementSelector)
-  if (!el) return;
-  el.scrollIntoView({ behavior: 'smooth', block: 'center', });
-}
+const { getConnectableGameElementId, getBracketElementId } = useBracketElement()
 
 function scrollToGame(gameId: string) {
   if (!gameId) return;
   const gameBracketId = getGameBracketId(gameId)
-  const elementid = getGameElementId(gameId, gameBracketId)
-  scrollTo('#' + elementid)
+  const elementid = getConnectableGameElementId(gameBracketId, gameId)
+  scrollToElement('#' + elementid)
 }
 
-function scrollToBracket(bracketId: string) {
-  scrollTo(`#BRACKET_${bracketId}`)
+function scrollToSelectedGameWinner() {
+  const { winner } = selectedGame.value?.connections || {}
+  if (!winner) return;
+  scrollToGame(winner)
+}
+function scrollToSelectedGameLoser() {
+  const { loser } = selectedGame.value?.connections || {}
+  if (!loser) return;
+  scrollToGame(loser)
 }
 
-const allGames = computed(() => {
-  return getAllEventGames()
-})
-
-const editableBracketStore = useEditableBracket(uniqueId)()
+const editableBracketStore = useEditableBracket(props.uniqueId)()
 
 const { mode } = storeToRefs(editableBracketStore)
 const { setBracketManagerMode, beginConnect, beginLoserConnect } = editableBracketStore
-
-
-
 
 function reset() {
   setSelectedGameId(null);
@@ -272,7 +186,7 @@ const availableGames = computed(() => {
       break;
 
     case 'setLoser':
-      gamesArray = [...getAvailableLoserGames(selectedGameId.value, drawNumbers.value).map(({ id }) => id), selectedGameId.value]
+      gamesArray = [...getAvailableLoserGames(selectedGameId.value).map(({ id }) => id), selectedGameId.value]
       break;
 
     case 'viewGame':
@@ -341,12 +255,6 @@ async function onGameSelect(game: BracketGame) {
   }
 }
 
-function getGameElementId(gameId: string, bracketId: string) {
-  return `${bracketId}_CONNECTABLE_GAME_${gameId}`
-}
-
-
-
 function removeLoserConnection() {
   updateLoserConnection(selectedGameId.value, '')
 }
@@ -358,139 +266,28 @@ function deleteGame(gameId, bracketId) {
   reset()
 }
 
-
-watch(games, (val) => {
-  localStorage.setItem('games', JSON.stringify(val))
-}, { deep: true })
-
-onMounted(() => {
-  const savedGames = localStorage.getItem('games');
-  if (savedGames) {
-    updateGames(JSON.parse(savedGames))
-  }
-})
-
-const requiredNumTeams = computed(() => {
-  return getNumRequiredTeamsForBracketEvent(allGames.value)
-})
-
-const numEndTeams = computed(() => {
-  return allGames.value.filter(({ connections }) => !connections?.winner).length
-})
-
-const numSheets = ref(6)
-
-const { getDrawNumbersForBracketGames, getNumberOfDrawsForBracketEvent } = useSchedule();
-
-const drawNumbers = computed(() => {
-  return getDrawNumbersForBracketGames(allGames.value, numSheets.value)
-})
-
-const gamesPerDraw = computed(() => {
-  return Object.entries(drawNumbers.value).reduce((all, [gameId, drawNum]) => {
-    if (!all[drawNum]) {
-      return {
-        ...all,
-        [drawNum]: [gameId]
-      }
-    }
-    return {
-      ...all,
-      [drawNum]: [...all[drawNum], gameId]
-    }
-  }, {})
-})
-
-const numDraws = computed(() => {
-  return getNumberOfDrawsForBracketEvent(drawNumbers.value)
-})
-
-
-const drawsViewing = ref([])
-const currentlyViewingDraw = ref(null)
-
-
-
-function sortDrawsByPositionY(drawNum: number) {
-  const drawGames = gamesPerDraw.value[drawNum] || [];
-  if (!drawGames?.length) return;
-
-  drawsViewing.value = [...drawGames].sort((a, b) => {
-    const { top: topA = 0 } = document.querySelector(`[data-gameid="${a}"]`)?.getBoundingClientRect()
-    const { top: topB = 0 } = document.querySelector(`[data-gameid="${b}"]`)?.getBoundingClientRect()
-    return topA - topB;
-
-  })
-}
-
-function scrollToNextDraw() {
-  if (!drawsViewing.value?.length) return;
-  let draw;
-  if (!currentlyViewingDraw.value) {
-    draw = drawsViewing.value[0]
-
-  } else {
-    const index = Object.values(drawsViewing.value).indexOf(currentlyViewingDraw.value)
-    if (index === Object.keys(drawsViewing.value).length - 1) {
-
-      draw = drawsViewing.value[0]
-    } else {
-      draw = drawsViewing.value[index + 1]
-    }
-
-  }
-  currentlyViewingDraw.value = draw
-  scrollToGame(draw)
-}
-
-
 const selectedDraw = ref<number | null>(null)
 async function selectDraw(drawNum: number | null) {
   if (drawNum === null) {
     selectedDraw.value = null;
     setBracketManagerMode('view')
-    drawsViewing.value = [];
-    currentlyViewingDraw.value = null;
   } else if (selectedDraw.value === drawNum) {
-    scrollToNextDraw()
+    return;
   } else {
-    sortDrawsByPositionY(drawNum)
-    scrollToNextDraw()
     selectedDraw.value = drawNum;
     setBracketManagerMode('viewDraw')
   }
 }
-
-async function onDrawButtonClick(drawNum: number) {
-  setSelectedGameId(null);
-  setOriginId('');
-  setConnectionId('');
-  setLoserOriginId('');
-  setBracketManagerMode('viewDraw')
-  await nextTick()
-  selectDraw(drawNum)
-}
-
-const onViewTeamConnection = (e) => {
-  const { gameId: originGameId, teamId: team } = e;
-  if (originGameId !== selectedGameId.value) return;
-  const gameId = team.split(' ')[1];
-  if (!gameId) return;
-  scrollToGame(gameId)
-}
-
-const saveLocal = useDebounceFn((val) => {
-  localStorage.setItem('games', JSON.stringify(val))
-}, 4000)
-watch(games, (val) => {
-  saveLocal(val)
-}, { deep: true })
-
-onMounted(() => {
-  const g = localStorage.getItem('games')
-  if (g) {
-    initGames(JSON.parse(g))
+const loading = ref(true)
+const { fetchBracket } = useGetBracket()
+onMounted(async () => {
+  if (props.bracketGroupId) {
+    const g = await fetchBracket(props.bracketGroupId)
+    initGames(g)
   }
+  nextTick(() => {
+    loading.value = false;
+  })
 })
 
 

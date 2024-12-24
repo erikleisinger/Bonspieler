@@ -8,13 +8,11 @@
 }">
   <slot name="prepend" />
   <div class="bg-gray-100 rounded-lg overflow-hidden">
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] py-1 hover:bg-gray-200 px-2"
-      @click="viewTeamConnection(teams[0])">
+    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] py-1 hover:bg-gray-200 px-2">
       {{
         teams[0] }}</div>
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1 hover:bg-gray-200 px-2"
-      @click="viewTeamConnection(teams[1])">{{
-        teams[1] }}
+    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1 hover:bg-gray-200 px-2">{{
+      teams[1] }}
     </div>
   </div>
   <slot />
@@ -32,15 +30,13 @@ const props = defineProps<{
 }>()
 
 const el = ref(null)
-const emit = defineEmits(['hover', 'viewTeamConnection'])
+const emit = defineEmits(['hover'])
 const hovered = useElementHover(el)
 watch(hovered, (val) => {
   emit('hover', val)
 })
 
-function viewTeamConnection(teamId: string) {
-  emit('viewTeamConnection', teamId)
-}
+
 
 
 

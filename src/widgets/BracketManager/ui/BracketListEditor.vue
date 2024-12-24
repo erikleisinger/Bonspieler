@@ -1,6 +1,6 @@
 <template>
 <div class="flex gap-2 ">
-  <div v-for="bracket, index in Object.keys(editedGames)" :key="bracket">
+  <div v-for="bracket, index in Object.keys(games)" :key="bracket">
     <div v-if="!editMode" @click="onClick(bracket)"
       class="w-[150px] py-2 px-4 bg-white rounded-lg text-center hover:bg-blue-500 hover:text-white cursor-pointer">
       Bracket {{ index + 1 }}
@@ -29,55 +29,36 @@
 
 </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import { useUniqueId } from '@/shared/composables/useUniqueId';
 import { ref, computed } from 'vue'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import Pencil from '@/shared/icons/Pencil.vue'
 import Checkmark from '@/shared/icons/Checkmark.vue'
+import { useBracket } from '../lib/useBracket';
+import { useBracketElement } from '../lib/useBracketElement';
+import { scrollToElement } from '@/shared/utils/scrollToElement';
+import { storeToRefs } from 'pinia';
 const props = defineProps({
   editable: Boolean,
-  games: Object
+  storeId: String
 })
 
-const emit = defineEmits(['update:games', 'click'])
+const store = useBracket(props.storeId)
+const { games } = storeToRefs(store)
+const { addBracket, deleteBracket } = store;
 
-const editedGames = computed({
-  get() {
-    return props.games;
-  },
-  set(newGames) {
-    emit('update:games', newGames);
-  }
-})
+const emit = defineEmits(['update:games',])
 
-function addBracket() {
-  const id = useUniqueId();
-  editedGames.value[id] = []
-}
+const { getBracketElementId } = useBracketElement();
+
 
 const editMode = ref(false)
 
-function onClick(bracket) {
-  if (!editMode.value) {
-    emit('click', bracket)
-  }
+function onClick(bracketId: string) {
+  if (editMode.value) return;
+  scrollToElement('#' + getBracketElementId(bracketId))
+
 }
 
-function deleteBracket(bracket) {
-  const gamesClone = { ...editedGames.value };
-  const bracketGames = gamesClone[bracket];
-  Object.keys(gamesClone).forEach((bracketId) => {
-    const newGames = [...gamesClone[bracketId]].map((g) => ({
-      ...g,
-      connections: {
-        winner: bracketGames.find(({ id }) => id === g.connections.winner) ? '' : g.connections.winner,
-        loser: bracketGames.find(({ id }) => id === g.connections.loser) ? '' : g.connections.loser,
-      }
-    }))
-    gamesClone[bracketId] = newGames;
-  })
-  delete gamesClone[bracket];
-  editedGames.value = gamesClone;
-}
 </script>
