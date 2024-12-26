@@ -46,7 +46,7 @@ export const useBracket = (id: string = useUniqueId()) => {
 
 
     function initGames(initialGames = defaultInitialGames) {
-      Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket))
+      Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket, Object.values(initialGames).flat()))
     }
 
     function addBracket() {
@@ -103,7 +103,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       })
     }
 
-    function setGamesForBracket(newGames: BracketGame[], bracketId: string) {
+    function setGamesForBracket(newGames: BracketGame[], bracketId: string, games?: BracketGame[]) {
       gamesBracketIndex.value.set(bracketId, newGames)
       const bracketIndex = Array.from(gamesBracketIndex.value.keys()).indexOf(bracketId)
       newGames.forEach((game, index) => {
@@ -111,8 +111,8 @@ export const useBracket = (id: string = useUniqueId()) => {
           game,
           bracketId,
           origins: {
-            winner: getOriginWinnerConnections(game),
-            loser: getOriginLoserConnections(game),
+            winner: getOriginWinnerConnections(game, games),
+            loser: getOriginLoserConnections(game, games),
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
         })
@@ -131,26 +131,6 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     function getNumEndTeamsForBracketEvent() {
       return allGames.value.filter(({ connections }) => !connections?.winner).length
-    }
-
-
-    function getEditableGames(gamesArr: BracketGame[]): BracketGameWithOrigins[] {
-      const getBracketIndex = (id: string) => {
-        return Array.from(gamesBracketIndex.value.keys()).indexOf(id)
-      }
-      return [...gamesArr].map((game, index) => {
-        const bracketId = getGameBracketId(game.id)
-        const bracketIndex = getBracketIndex(bracketId)
-        return {
-          ...game,
-          origins: {
-            winner: getOriginWinnerConnections(game),
-            loser: getOriginLoserConnections(game),
-          },
-          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
-        }
-      })
-
     }
 
     function getGameIndexById(gameId: string, bracketId: string) {
@@ -218,6 +198,12 @@ export const useBracket = (id: string = useUniqueId()) => {
       }, bracketId)
       if (!updatedGame) return;
       updateGame(updatedGame)
+      gamesBracketIndex.value.forEach((_, bracketId) => {
+
+        const gamesCopy = Array.from(gamesIndex.value.values()).filter((g) => g.bracketId === bracketId).map(({ game }) => game)
+        console.log('games: ', bracketId, gamesCopy, allGames.value)
+        setGamesForBracket(gamesCopy, bracketId)
+      })
     }
 
     function removeConnectionsToGame(gameId: string) {
@@ -255,12 +241,12 @@ export const useBracket = (id: string = useUniqueId()) => {
       deletedGameIds.value.push(gameId)
     }
 
-    function getOriginWinnerConnections(game: BracketGame) {
-      return allGames.value.filter(({ connections }) => connections.winner === game.id)
+    function getOriginWinnerConnections(game: BracketGame, games: BracketGame[] = allGames.value) {
+      return games.filter(({ connections }) => connections.winner === game.id)
     }
 
-    function getOriginLoserConnections(game: BracketGame) {
-      return allGames.value.filter(({ connections }) => connections.loser === game.id)
+    function getOriginLoserConnections(game: BracketGame, games: BracketGame[] = allGames.value) {
+      return games.filter(({ connections }) => connections.loser === game.id)
     }
 
     function getAllOriginConnections(game: BracketGame) {
@@ -370,7 +356,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       drawCount,
       gamesBracketIndex,
       gamesIndex,
-      getFullGame,
+
       loserGame,
       numSheets,
       selectedGameId,
@@ -384,7 +370,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       getAvailableLoserGames,
       getAvailableWinnerGames,
       getConnectedGames,
-      getEditableGames,
+      getFullGame,
       getGameBracketId,
       getGameById,
       getGamesForBracket,

@@ -96,7 +96,6 @@ const {
   getAvailableLoserGames,
   getAvailableWinnerGames,
   getConnectedGames,
-  getEditableGames,
   getGameBracketId,
   getGameById,
   getGamesForBracket,

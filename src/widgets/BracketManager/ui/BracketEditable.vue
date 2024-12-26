@@ -104,7 +104,7 @@ const { setOriginId, setConnectionId } = useConnectionStore();
 
 
 const bracketStore = useBracket(props.bracketId)
-const { addGame, updateGame, getGameById, getGamesForBracket, setGamesForBracket, getEditableGames, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket } = bracketStore;
+const { addGame, updateGame, getGameById, getGamesForBracket, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket } = bracketStore;
 
 const editableBracketStore = useEditableBracket(props.bracketId)();
 const { beginConnect } = editableBracketStore
