@@ -92,10 +92,6 @@ const props = defineProps({
   editable: Boolean,
   bracketId: String,
   mode: String,
-  selectedGameId: {
-    type: String,
-    default: null
-  },
   availableGames: {
     type: Array,
     default: () => []
@@ -104,7 +100,7 @@ const props = defineProps({
   rounds: Array,
 })
 const bracketStore = useBracket(props.bracketId);
-const { winnerGame, loserGame } = storeToRefs(bracketStore);
+const { winnerGame, loserGame, selectedGameId } = storeToRefs(bracketStore);
 const { getGamesForBracket, getFullGame } = bracketStore;
 
 const games = computed(() => getGamesForBracket(props.uniqueId));

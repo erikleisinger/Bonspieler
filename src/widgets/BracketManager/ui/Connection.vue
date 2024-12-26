@@ -4,12 +4,17 @@
   'border-gray-500': !opaque
 }">
 
+  <!-- STATIC LINE -->
+
   <div class="h-[3px]  border-[inherit]" :class="{
     'bg-gray-500': !opaque,
     'bg-gray-200 z-[0]': opaque
   }" :style="{
     width: `${widthStart}px`
   }" v-if="connectionId" ref="thisEl" />
+
+  <!-- VARIABLE/EDITABLE LINE -->
+
   <div class="  border-l-[3px]  relative border-[inherit]" v-if="connectionId" :style="{
     height: `${height + 3}px`,
     width: `${width}px`,
