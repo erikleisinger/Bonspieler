@@ -1,5 +1,5 @@
 <template>
-<div class="bg-white rounded-xl px-2 py-2 w-[200px] border-2 h-fit transform-all" ref="el" :class="{
+<div v-if="game" class="bg-white rounded-xl px-2 py-2 w-[200px] border-2 h-fit transform-all" ref="el" :class="{
   'border-red-500': loser,
   'border-amber-500': winner,
   'border-blue-500 hover:bg-blue-50 cursor-pointer ': available && !loser && !winner,
@@ -43,13 +43,17 @@ import { useElementHover } from '@vueuse/core';
 import { ref, watch, computed } from 'vue'
 import { useDrawColor } from '@/shared/composables/useDrawColor'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
+import { useBracket } from '../lib/useBracket';
 const props = defineProps<{
   available?: boolean,
+  bracketId: string
   opaque?: boolean,
-  game?: any,
+  gameId: string,
   loser?: boolean;
   winner?: boolean;
 }>()
+const bracketStore = useBracket(props.bracketId)
+const { getFullGame } = bracketStore
 
 const { getDrawColor } = useDrawColor()
 
@@ -60,14 +64,14 @@ watch(hovered, (val) => {
   emit('hover', val)
 })
 
-
+const game = computed(() => getFullGame(props.gameId))
 
 
 
 const teams = computed(() => {
-  const { origins } = props.game || {};
+  const { origins } = game.value || {};
   const { loser = [], winner = [] } = origins || {};
-  const all = [...loser.map(({ id }) => `Loser ${id}`), ...winner.map(({ id }) => `Winner ${id}`)];
+  const all = [...loser.map(({ readableId }) => `Loser ${readableId}`), ...winner.map(({ readableId }) => `Winner ${readableId}`)];
   let t = []
   if (all.length === 0) {
     t = ['Team 1', 'Team 2']
@@ -82,6 +86,6 @@ const teams = computed(() => {
 })
 
 const connections = computed(() => {
-  return props.game?.game?.connections || {};
+  return game.value?.game?.connections || {};
 })
 </script>

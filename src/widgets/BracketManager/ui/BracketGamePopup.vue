@@ -19,7 +19,7 @@
             <WinnerIconBubble />
             <DrawColorIcon class="w-[12px] h-[12px] " v-if="winnerConnectionDrawNumber"
               :drawNumber="winnerConnectionDrawNumber" />
-            <div>{{ connections.winner || 'No winning game set' }}</div>
+            <div>{{ winnerConnection?.readableId || 'No winning game set' }}</div>
           </div>
           <RemoveButton @click="removeWinnerConnection(selectedGameId)" v-if="connections.winner" />
           <AddButton v-else @click="beginConnect(selectedGameId)"></AddButton>
@@ -32,7 +32,7 @@
             <LoserIconBubble />
             <DrawColorIcon class="w-[12px] h-[12px] " v-if="loserConnectionDrawNumber"
               :drawNumber="loserConnectionDrawNumber" />
-            <div>{{ connections.loser || 'No losing game set' }}</div>
+            <div>{{ loserConnection?.readableId || 'No losing game set' }}</div>
           </div>
           <RemoveButton @click="removeLoserConnection" v-if="connections.loser" />
           <AddButton v-else @click="beginLoserConnect" />
@@ -100,15 +100,18 @@ const connections = computed(() => selectedGame.value?.game?.connections || {
   loser: '',
 })
 
-const winnerConnectionDrawNumber = computed(() => {
+const winnerConnection = computed(() => {
   if (!connections.value.winner) return null;
-  return getFullGame(connections.value.winner)?.drawNumber
+  return getFullGame(connections.value.winner)
 })
 
-const loserConnectionDrawNumber = computed(() => {
+const loserConnection = computed(() => {
   if (!connections.value.loser) return null;
-  return getFullGame(connections.value.loser)?.drawNumber
+  return getFullGame(connections.value.loser)
 })
+
+const winnerConnectionDrawNumber = computed(() => winnerConnection.value?.drawNumber)
+const loserConnectionDrawNumber = computed(() => loserConnection.value?.drawNumber)
 
 function scrollToSelectedGameWinner() {
   const { winner } = connections.value || {}

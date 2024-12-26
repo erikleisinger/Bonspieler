@@ -20,7 +20,7 @@
           <div>
             <div class="flex m-4 relative">
               <slot name="prepend-game" />
-              <BracketGame :game="getFullGame(game.id)" :data-gameid="game.id" class="cursor-pointer"
+              <BracketGame :gameId="game.id" :bracketId="bracketId" :data-gameid="game.id" class="cursor-pointer"
                 @click.stop="onClick(game)" :id="getConnectableGameElementId(uniqueId, game.id)"
                 @hover="onHover(game, $event)" :available="isGameAvailable(game)"
                 :opaque="availableGames && !!availableGames.length && !isGameAvailable(game)"
@@ -71,7 +71,6 @@
 import Draggable from './Draggable.vue'
 import Connection from './Connection.vue'
 import BracketGame from './BracketGame.vue'
-import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import WinnerIconBubble from './WinnerIconBubble.vue'
 import LoserIconBubble from './LoserIconBubble.vue'
 import RoundHeader from './RoundHeader.vue'
@@ -169,7 +168,7 @@ const emitDragUpdate = useDebounceFn((gameId, updates) => {
     gameId,
     updates
   })
-}, 100)
+}, 50)
 
 function onDragUpdate(gameId, updates) {
   emitDragUpdate(gameId, updates)

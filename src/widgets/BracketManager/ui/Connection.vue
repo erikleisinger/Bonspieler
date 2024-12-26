@@ -99,7 +99,6 @@ function ewMouseMove(e) {
 }
 
 function ewMouseUp() {
-
   emit('updateLineWidth', widthStart.value)
   document.removeEventListener('mousemove', ewMouseMove)
   document.removeEventListener('mouseup', ewMouseUp)

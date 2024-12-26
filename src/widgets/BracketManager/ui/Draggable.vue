@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
-import { useEventListener, useElementHover, useElementBounding } from '@vueuse/core'
+import { useEventListener, useElementBounding } from '@vueuse/core'
 import { useDraggableStore } from '../lib/useDraggable';
 import { storeToRefs } from 'pinia';
 
