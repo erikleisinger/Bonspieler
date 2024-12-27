@@ -46,6 +46,7 @@ export const useBracket = (id: string = useUniqueId()) => {
 
 
     function initGames(initialGames = defaultInitialGames) {
+      reset();
       Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket, Object.values(initialGames).flat()))
     }
 
@@ -106,6 +107,17 @@ export const useBracket = (id: string = useUniqueId()) => {
     function setGamesForBracket(newGames: BracketGame[], bracketId: string, games?: BracketGame[]) {
       gamesBracketIndex.value.set(bracketId, newGames)
       const bracketIndex = Array.from(gamesBracketIndex.value.keys()).indexOf(bracketId)
+      newGames.forEach((game, index) => {
+        gamesIndex.value.set(game.id, {
+          game,
+          bracketId,
+          origins: {
+            winner: getOriginWinnerConnections(game, games),
+            loser: getOriginLoserConnections(game, games),
+          },
+          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
+        })
+      })
       newGames.forEach((game, index) => {
         gamesIndex.value.set(game.id, {
           game,
@@ -199,9 +211,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       if (!updatedGame) return;
       updateGame(updatedGame)
       gamesBracketIndex.value.forEach((_, bracketId) => {
-
         const gamesCopy = Array.from(gamesIndex.value.values()).filter((g) => g.bracketId === bracketId).map(({ game }) => game)
-        console.log('games: ', bracketId, gamesCopy, allGames.value)
         setGamesForBracket(gamesCopy, bracketId)
       })
     }
@@ -329,10 +339,13 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     const { getDrawNumbersForBracketGames, getNumberOfDrawsForBracketEvent } = useSchedule()
 
+
     const numSheets = ref(6)
 
     function setNumSheets(n: number) {
       numSheets.value = n
+      updateDrawNumbers()
+
     }
     function getDrawNumbers() {
       const sheets = numSheets.value <= 0 ? 1 : numSheets.value;
