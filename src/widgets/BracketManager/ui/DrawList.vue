@@ -19,7 +19,7 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue'])
 
 const bracketStore = useBracket(props.bracketId)
-const { drawCount, gamesIndex } = storeToRefs(bracketStore)
+const { gamesIndex } = storeToRefs(bracketStore)
 
 const selectedDraw = computed({
   get() {
@@ -50,6 +50,8 @@ const gamesPerDraw = computed(() => {
     }
   }, {})
 })
+
+const drawCount = computed(() => Object.keys(gamesPerDraw.value).length)
 
 
 </script>

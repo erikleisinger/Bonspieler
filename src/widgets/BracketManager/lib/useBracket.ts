@@ -37,6 +37,11 @@ export const useBracket = (id: string = useUniqueId()) => {
       return Array.from(gamesIndex.value.values()).map(({ game }) => game)
     })
 
+    const autoCalcDrawNumbers = ref(false)
+    watch(autoCalcDrawNumbers, (val) => {
+      if (!val) return;
+      updateDrawNumbers();
+    })
     const drawNumbers = ref({})
 
     function reset() {
@@ -46,6 +51,7 @@ export const useBracket = (id: string = useUniqueId()) => {
 
 
     function initGames(initialGames = defaultInitialGames) {
+      console.log('iinit games: ', initialGames)
       reset();
       Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket, Object.values(initialGames).flat()))
     }
@@ -115,7 +121,8 @@ export const useBracket = (id: string = useUniqueId()) => {
             winner: getOriginWinnerConnections(game, games),
             loser: getOriginLoserConnections(game, games),
           },
-          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
+          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
+          drawNumber: game.drawNumber || 1
         })
       })
       newGames.forEach((game, index) => {
@@ -126,10 +133,12 @@ export const useBracket = (id: string = useUniqueId()) => {
             winner: getOriginWinnerConnections(game, games),
             loser: getOriginLoserConnections(game, games),
           },
-          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`
+          readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
+          drawNumber: game.drawNumber || 1
+
         })
       })
-      updateDrawNumbers()
+      if (autoCalcDrawNumbers.value) updateDrawNumbers()
     }
 
     function getNumRequiredTeamsForBracketEvent() {
@@ -291,7 +300,9 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     function getAvailableWinnerGames(gameId: string) {
       const bracketId = getGameBracketId(gameId)
-      return getGamesForBracket(bracketId).filter((game: BracketGame) => hasLessThanTwoOriginWinnerConnections(game))
+      const thisGame = getGameById(gameId);
+      if (!thisGame) return []
+      return getGamesForBracket(bracketId).filter((game: BracketGame) => game.roundNumber > thisGame.roundNumber && hasLessThanTwoOriginWinnerConnections(game))
     }
 
     function getGameBracketId(gameId: string) {
@@ -344,7 +355,7 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     function setNumSheets(n: number) {
       numSheets.value = n
-      updateDrawNumbers()
+      if (autoCalcDrawNumbers.value) updateDrawNumbers()
 
     }
     function getDrawNumbers() {
@@ -364,12 +375,12 @@ export const useBracket = (id: string = useUniqueId()) => {
 
     return {
       allGames,
+      autoCalcDrawNumbers,
       deletedGameIds,
       deletedBracketIds,
       drawCount,
       gamesBracketIndex,
       gamesIndex,
-
       loserGame,
       numSheets,
       selectedGameId,

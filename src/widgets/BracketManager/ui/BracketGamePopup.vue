@@ -1,41 +1,69 @@
 <template>
-<div class="fixed inset-0 pointer-events-none rounded-xl  border-blue-500 z-50" :class="{
-  'border-0': !selectedGame,
-  'border-[16px]': !!selectedGame,
-}" style="transition: border 0.2s">
-  <div class="absolute top-8 left-0 right-0 m-auto w-fit z-50 transition-transform " :class="{
+<div class="fixed inset-0 pointer-events-none rounded-xl   z-50 " style="transition: border 0.2s">
+  <div class="absolute top-8 left-0 right-0 m-auto w-fit z-50 transition-transform w-[325px] max-w-[90vw]" :class="{
     'scale-0': !selectedGame,
     'scale-100': !!selectedGame,
   }">
     <div class="p-4 bg-white font-semibold  rounded-xl shadow-md " style="pointer-events: all">
-      <div class="text-blue-500 text-lg" v-if="mode === 'viewGame'">Editing Game</div>
+      <div class="text-blue-500 text-lg" v-if="mode === 'viewGame'">Editing Game {{ selectedGame?.readableId || '' }}
+      </div>
       <div class="text-red-500 text-lg" v-else-if="mode === 'setLoser'">Select losing game</div>
       <div class="text-blue-500 text-lg" v-else-if="mode === 'setWinner'">Select winning game</div>
-      <div>
+      <div class="font-normal text-sm flex gap-2 items-center" v-if="selectedGame?.drawNumber">
+        <DrawColorIcon class="w-[12px] h-[12px] " :drawNumber="selectedGame.drawNumber" />
+        <span>Draw {{ selectedGame.drawNumber
+          }}</span>
+      </div>
+      <div class="min-w-[200px]">
         <div v-if="selectedGame && mode === 'viewGame'" class="flex gap-2 items-center mt-2">
-          <div
-            class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
-            @click="scrollToSelectedGameWinner">
-            <WinnerIconBubble />
-            <DrawColorIcon class="w-[12px] h-[12px] " v-if="winnerConnectionDrawNumber"
-              :drawNumber="winnerConnectionDrawNumber" />
-            <div>{{ winnerConnection?.readableId || 'No winning game set' }}</div>
+          <div class="bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer grow">
+
+            <div class="flex items-center gap-4 font-normal py-1 px-2      " @click="scrollToSelectedGameWinner">
+              <WinnerIconBubble />
+              <div>
+                <div class="text-xs text-gray-800">Winner to</div>
+                <div class="flex items-center gap-2">
+                  <DrawColorIcon class="w-[12px] h-[12px] " v-if="winnerConnectionDrawNumber"
+                    :drawNumber="winnerConnectionDrawNumber" />
+                  <div>{{ winnerConnection?.readableId || 'No game set' }}</div>
+                </div>
+              </div>
+            </div>
           </div>
           <RemoveButton @click="removeWinnerConnection(selectedGameId)" v-if="connections.winner" />
           <AddButton v-else @click="beginConnect(selectedGameId)"></AddButton>
 
         </div>
         <div v-if="selectedGameId && mode === 'viewGame'" class="flex gap-2 items-center mt-2">
-          <div
-            class="flex items-center gap-2 font-normal py-1 px-2 bg-gray-100 hover:bg-gray-200 rounded-md  cursor-pointer grow"
-            @click="scrollToSelectedGameLoser">
-            <LoserIconBubble />
-            <DrawColorIcon class="w-[12px] h-[12px] " v-if="loserConnectionDrawNumber"
-              :drawNumber="loserConnectionDrawNumber" />
-            <div>{{ loserConnection?.readableId || 'No losing game set' }}</div>
+          <div class="bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer grow">
+            <div class="flex items-center gap-4 font-normal py-1 px-2      " @click="scrollToSelectedGameLoser">
+              <LoserIconBubble />
+              <div>
+                <div class="text-xs text-gray-800">Loser {{ loserConnectionDrawNumber ? 'to' : '' }}</div>
+                <div class="flex items-center gap-2">
+                  <DrawColorIcon class="w-[12px] h-[12px] " v-if="loserConnectionDrawNumber"
+                    :drawNumber="loserConnectionDrawNumber" />
+                  <div>{{ loserConnection?.readableId || 'Out' }}</div>
+                </div>
+              </div>
+            </div>
           </div>
           <RemoveButton @click="removeLoserConnection" v-if="connections.loser" />
           <AddButton v-else @click="beginLoserConnect" />
+        </div>
+
+        <div v-if="mode === 'setLoser'"
+          class="bg-gray-100 rounded-md font-normal p-2 text-sm italic mt-2 text-gray-800">
+          Where should the loser of this game go? Click on a highlighted game to select it.
+
+
+        </div>
+
+        <div v-if="mode === 'setWinner'"
+          class="bg-gray-100 rounded-md font-normal p-2 text-sm italic mt-2 text-gray-800">
+          Where should the winner of this game go? Click on a highlighted game to select it.
+
+
         </div>
 
       </div>

@@ -15,7 +15,7 @@
     </div>
 
   </div>
-  <StageCard class="relative" @click="emit('addStage')">
+  <StageCard class="relative" @click="emit('addStage', stages?.length + 1)">
     <div class="absolute inset-0 flex justify-center items-center">
       <div>
         <div class="text-[5rem] text-slate-700 text-center">+</div>

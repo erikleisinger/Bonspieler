@@ -1,4 +1,3 @@
-import type { BracketEvent } from "./types"
 import { ref } from 'vue'
 import { useApi } from "@/shared/composables/useApi"
 import { useBracket } from './useBracket'
@@ -64,27 +63,42 @@ export const useSaveBracket = () => {
 
   const saving = ref(false)
 
-  async function saveBracket(bracketStoreId: string, bracketGroupId: string) {
+  async function saveBracket(bracketStoreId: string, options: { bracketGroupId?: string, eventId?: string, stageNumber?: number } = {}) {
     saving.value = true;
     const { gamesIndex, gamesBracketIndex, getFullGame, deletedGameIds, deletedBracketIds, getNumEndTeamsForBracketEvent, getNumRequiredTeamsForBracketEvent } = useBracket(bracketStoreId)
     let bracketGames: Tables<'bracket_games'>[] = []
 
     const startTeams = getNumRequiredTeamsForBracketEvent();
     const endTeams = getNumEndTeamsForBracketEvent()
+    const { bracketGroupId, eventId, stageNumber } = options
+    let groupId;
 
-    await useApi().from('bracket_groups').update({
-      start_team_count: startTeams,
-      end_team_count: endTeams
-    }).eq('id', bracketGroupId)
+    if (bracketGroupId) {
+      groupId = bracketGroupId;
+      await useApi().from('bracket_groups').update({
+        start_team_count: startTeams,
+        end_team_count: endTeams
+      }).eq('id', bracketGroupId)
+    } else {
+      const { data } = await useApi().from('bracket_groups').insert({
+        start_team_count: startTeams,
+        end_team_count: endTeams,
+        event_id: eventId,
+        stage_num: stageNumber,
+      }).select('id').single()
+      groupId = data?.id;
+    }
+
+
 
     await Array.from(gamesBracketIndex.entries()).reduce(async (prom, [bracketId, games]) => {
       await prom
       let dbBracketId;
       if (isLocalId(bracketId)) {
-        const { data } = await createNewBracket(bracketGroupId)
+        const { data } = await createNewBracket(groupId)
         dbBracketId = data?.id;
       } else {
-        const { data } = await updateBracket(bracketGroupId, bracketId)
+        const { data } = await updateBracket(groupId, bracketId)
         dbBracketId = data?.id;
       }
 

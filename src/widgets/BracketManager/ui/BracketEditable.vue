@@ -51,7 +51,6 @@
   </template>
   <template #append-connection="{ winnerGame, loserGame, game }">
     <Connection v-if="originId === getConnectableGameElementId(uniqueId, game.id)" :connectionId="connectionId" editable
-      class="EEEEECTION"
       :opaque="(availableGames && !!availableGames.length && !isGameAvailable(game)) || loserGame === game.id || winnerGame === game.id" />
   </template>
 
@@ -76,10 +75,6 @@ import { storeToRefs } from 'pinia';
 const props = defineProps({
   bracketId: String,
   mode: String,
-  selectedGameId: {
-    type: String,
-    default: null
-  },
   games: {
     type: Array,
     default: () => []
@@ -105,6 +100,7 @@ const { setOriginId, setConnectionId } = useConnectionStore();
 
 const bracketStore = useBracket(props.bracketId)
 const { addGame, updateGame, getGameById, getGamesForBracket, removeWinnerConnection, removeRoundFromBracket, getRoundsForBracket } = bracketStore;
+const { selectedGameId } = storeToRefs(bracketStore)
 
 const editableBracketStore = useEditableBracket(props.bracketId)();
 const { beginConnect } = editableBracketStore
@@ -158,7 +154,7 @@ function addRound() {
 
 const selectedGame = computed({
   get() {
-    return props.selectedGameId
+    return selectedGameId.value
   },
   set(value) {
     emit('update:selectedGameId', value)

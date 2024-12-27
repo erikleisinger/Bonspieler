@@ -8,6 +8,7 @@
 }">
   <div class="flex justify-between mb-2">
     <div class="flex gap-1 ">
+
       <NumberBubble :class="getDrawColor(game.drawNumber)" class="text-white text-xs absolute translate-y-[-25%]">
         <div class="mt-[1px]"> {{
           game.readableId }}</div>
@@ -17,14 +18,12 @@
     </div>
 
     <div class="text-xs text-right rounded-lg  w-fit  px-2  text-red-500">
-      <div v-if="connections.loser">
-        Loser {{ connections.loser }}
+      <div v-if="loserConnection" class="flex gap-1 items-center">
+        Loser to {{ loserConnection.readableId }}
 
 
       </div>
-      <div v-else>
-        Loser out
-      </div>
+      <div v-else>Loser out</div>
     </div>
   </div>
   <div class="bg-gray-100 rounded-lg overflow-hidden">
@@ -71,7 +70,13 @@ const game = computed(() => getFullGame(props.gameId))
 const teams = computed(() => {
   const { origins } = game.value || {};
   const { loser = [], winner = [] } = origins || {};
-  const all = [...loser.map(({ readableId }) => `Loser ${readableId}`), ...winner.map(({ readableId }) => `Winner ${readableId}`)];
+  const all = [...loser.map(({ id }) => {
+    const { readableId } = getFullGame(id) || {};
+    return `Loser ${readableId}`;
+  }), ...winner.map(({ id }) => {
+    const { readableId } = getFullGame(id) || {};
+    return `Winner ${readableId}`;
+  })];
   let t = []
   if (all.length === 0) {
     t = ['Team 1', 'Team 2']
@@ -88,4 +93,6 @@ const teams = computed(() => {
 const connections = computed(() => {
   return game.value?.game?.connections || {};
 })
+
+const loserConnection = computed(() => !connections.value?.loser ? null : getFullGame(connections.value.loser))
 </script>

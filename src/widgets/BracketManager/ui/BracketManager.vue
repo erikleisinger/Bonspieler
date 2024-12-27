@@ -19,11 +19,19 @@
               <div class="flex flex-col bg-white rounded-lg  px-2 py-1">
                 <label for="sheetsinput" class="text-sm text-slate-700">Sheets</label>
                 <Input class=" rounded-md focus:outline-blue-500 bg-gray-100" placeholder="Sheets" type="number"
-                  v-model="numSheets" :min="1" :max="24">
+                  v-model="sheets" :min="1" :max="24">
                 </Input>
+                <div class="flex gap-2 mt-2" v-if="editable">
+                  <input type="checkbox" v-model="autoCalcDrawNumbers">
+
+                  </input>
+                  <div class="text-xs">Auto-calculate draw numbers</div>
+                </div>
+
               </div>
             </div>
-            <DrawList :bracketId="uniqueId" :modelValue="selectedDraw" @update:modelValue="selectDraw" />
+            <DrawList :bracketId="uniqueId" :modelValue="selectedDraw" @update:modelValue="selectDraw"
+              :editable="editable" />
           </div>
         </div>
       </div>
@@ -47,8 +55,11 @@
           </div>
         </div>
         <div v-if="editable" class="sticky bottom-0 bg-white p-4 rounded-lg shadow-md z-50 flex gap-2">
-          {{ deletedGameIds }} {{ deletedBracketIds }}
-          <Button class="w-fit" @click="saveBracket(uniqueId, bracketGroupId)">
+          <Button class="w-fit" @click="saveBracket(uniqueId, {
+            eventId,
+            bracketGroupId,
+            stageNumber,
+          })">
             {{ saving ? 'Saving...' : 'Save' }}
           </Button>
         </div>
@@ -79,6 +90,8 @@ import Button from '@/shared/ui/Button.vue';
 const props = defineProps<{
   bracketGroupId?: string,
   editable: boolean,
+  eventId?: string,
+  stageNumber?: number,
   uniqueId: string,
 }>()
 
@@ -103,10 +116,12 @@ const {
   hasLessThanTwoOriginConnections,
   initGames,
   setSelectedGameId,
+  setNumSheets,
   updateLoserConnection,
 } = bracketStore
 
 const {
+  autoCalcDrawNumbers,
   drawCount,
   numSheets,
   gamesBracketIndex,
@@ -226,6 +241,7 @@ async function selectDraw(drawNum: number | null) {
 const loading = ref(true)
 const { fetchBracket } = useGetBracket()
 onMounted(async () => {
+  autoCalcDrawNumbers.value = !props.bracketGroupId && !!props.editable
   if (props.bracketGroupId) {
     const g = await fetchBracket(props.bracketGroupId)
     initGames(g)
@@ -233,6 +249,15 @@ onMounted(async () => {
   nextTick(() => {
     loading.value = false;
   })
+})
+
+const sheets = computed({
+  get() {
+    return numSheets.value
+  },
+  set(val: number) {
+    setNumSheets(val)
+  }
 })
 
 
