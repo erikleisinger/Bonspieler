@@ -9,10 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bracket_game_team_junction: {
+        Row: {
+          bracket_game_id: number | null
+          created_at: string
+          id: number
+          team_id: number | null
+        }
+        Insert: {
+          bracket_game_id?: number | null
+          created_at?: string
+          id?: number
+          team_id?: number | null
+        }
+        Update: {
+          bracket_game_id?: number | null
+          created_at?: string
+          id?: number
+          team_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bracket_game_team_junction_bracket_game_id_fkey"
+            columns: ["bracket_game_id"]
+            isOneToOne: false
+            referencedRelation: "bracket_games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bracket_game_team_junction_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bracket_games: {
         Row: {
           bracket_id: number | null
           created_at: string
+          draw_number: number | null
           id: number
           lineWidth: string | null
           local_id: string | null
@@ -25,6 +62,7 @@ export type Database = {
         Insert: {
           bracket_id?: number | null
           created_at?: string
+          draw_number?: number | null
           id?: number
           lineWidth?: string | null
           local_id?: string | null
@@ -37,6 +75,7 @@ export type Database = {
         Update: {
           bracket_id?: number | null
           created_at?: string
+          draw_number?: number | null
           id?: number
           lineWidth?: string | null
           local_id?: string | null
@@ -227,6 +266,42 @@ export type Database = {
             columns: ["event_stage_id"]
             isOneToOne: false
             referencedRelation: "event_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_event_junction: {
+        Row: {
+          created_at: string
+          event_id: number | null
+          id: number
+          team_id: number | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: number | null
+          id?: number
+          team_id?: number | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: number | null
+          id?: number
+          team_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_event_junction_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_event_junction_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]

@@ -6,7 +6,7 @@ import { useBracketElement } from "./useBracketElement"
 import { defineStore, storeToRefs } from 'pinia'
 
 
-type BracketManagerMode = 'view' | 'viewGame' | 'viewDraw' | 'setWinner' | 'setLoser'
+type BracketManagerMode = 'view' | 'viewGame' | 'viewDraw' | 'setWinner' | 'setLoser' | 'assignTeam'
 
 export const useEditableBracket = (id: string) => {
 
@@ -41,12 +41,20 @@ export const useEditableBracket = (id: string) => {
       setSelectedGameId(selectedGameId.value)
     }
 
+    const teamToAssignId = ref<string | null>(null)
+    function beginTeamAssign(teamId: string) {
+      teamToAssignId.value = teamId
+      setBracketManagerMode('assignTeam')
+    }
+
 
     return {
       beginConnect,
       beginLoserConnect,
+      beginTeamAssign,
       setBracketManagerMode,
-      mode
+      mode,
+      teamToAssignId,
     }
   })
 }

@@ -32,6 +32,12 @@
             </div>
             <DrawList :bracketId="uniqueId" :modelValue="selectedDraw" @update:modelValue="selectDraw"
               :editable="editable" />
+
+            <div class="font-semibold mb-2 mt-2">
+              <div>Teams</div>
+            </div>
+            <BracketTeamList :bonspielId="eventId" :uniqueId="uniqueId" @dragStart="onDragStart"
+              @dragEnd="setBracketManagerMode('view')" />
           </div>
         </div>
       </div>
@@ -87,6 +93,9 @@ import { useEditableBracket } from '../lib/useEditableBracket';
 import { useSaveBracket } from '../lib/useSaveBracket';
 import { useGetBracket } from '../lib/useGetBracket';
 import Button from '@/shared/ui/Button.vue';
+import BracketTeamList from './BracketTeamList.vue'
+
+
 const props = defineProps<{
   bracketGroupId?: string,
   editable: boolean,
@@ -101,7 +110,7 @@ const { saveBracket, saving } = useSaveBracket()
 const { originId, loserOriginId, originBracketId } = storeToRefs(useConnectionStore());
 const { setOriginId, setLoserOriginId, setConnectionId, setOriginBracketId } = useConnectionStore();
 
-const bracketStore = useBracket(props.uniqueId);
+const bracketStore = useBracket(props.uniqueId, props.eventId);
 
 const {
   addWinnerConnection,
@@ -127,14 +136,13 @@ const {
   gamesBracketIndex,
   gamesIndex,
   selectedGameId,
-  deletedBracketIds,
-  deletedGameIds,
+  teams,
 } = storeToRefs(bracketStore);
 
 const editableBracketStore = useEditableBracket(props.uniqueId)()
 
-const { mode } = storeToRefs(editableBracketStore)
-const { setBracketManagerMode, beginConnect, beginLoserConnect } = editableBracketStore
+const { mode, teamToAssignId } = storeToRefs(editableBracketStore)
+const { setBracketManagerMode, beginTeamAssign } = editableBracketStore
 
 function reset() {
   setSelectedGameId(null);
@@ -171,6 +179,13 @@ const availableGames = computed(() => {
     case 'viewDraw':
       gamesArray = [...Array.from(gamesIndex.value.values()).filter(({ drawNumber }) => {
         return `${drawNumber}` === `${selectedDraw.value}`
+      }).map(({ game }) => game.id)]
+      break;
+
+    case 'assignTeam':
+      gamesArray = [...Array.from(gamesIndex.value.values()).filter(({ origins }) => {
+        const { winner, loser } = origins;
+        return !(!!winner?.length && !!loser?.length)
       }).map(({ game }) => game.id)]
       break;
 
@@ -223,6 +238,10 @@ async function onGameSelect(game: BracketGame) {
     case 'viewGame':
       await viewGame(game)
       break;
+
+    case 'assignTeam':
+      console.log('assign team: ', teamToAssignId.value)
+      break;
   }
 }
 
@@ -259,6 +278,10 @@ const sheets = computed({
     setNumSheets(val)
   }
 })
+
+function onDragStart(teamId: string) {
+  beginTeamAssign(teamId)
+}
 
 
 

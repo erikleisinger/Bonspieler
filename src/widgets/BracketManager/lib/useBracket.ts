@@ -1,8 +1,9 @@
-import type { BracketGame, BracketGameWithOrigins, BracketGameConnections } from './types'
+import type { BracketGame, BracketGameConnections } from './types'
 import { ref, computed, watch } from 'vue'
 import { useUniqueId } from '@/shared/composables/useUniqueId';
 import { defineStore } from 'pinia'
 import { useSchedule } from './useSchedule';
+import { useBracketTeams } from './useBracketTeams';
 const defaultInitialGames = {
   [useUniqueId()]: [],
 }
@@ -17,7 +18,7 @@ function numberToLetter(n: number) {
   return result;
 }
 
-export const useBracket = (id: string = useUniqueId()) => {
+export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
   const useBracketStore = defineStore('bracket' + id, () => {
 
     const gamesIndex = ref<Map<string, {
@@ -28,7 +29,8 @@ export const useBracket = (id: string = useUniqueId()) => {
         loser: BracketGameConnections
       },
       readableId?: string,
-      drawNumber: number
+      drawNumber: number,
+      teams: any[]
     }>>(new Map([]));
 
     const gamesBracketIndex = ref<Map<string, BracketGame[]>>(new Map([]));
@@ -51,7 +53,6 @@ export const useBracket = (id: string = useUniqueId()) => {
 
 
     function initGames(initialGames = defaultInitialGames) {
-      console.log('iinit games: ', initialGames)
       reset();
       Object.keys(initialGames).forEach((bracket: string) => setGamesForBracket(initialGames[bracket], bracket, Object.values(initialGames).flat()))
     }
@@ -122,7 +123,8 @@ export const useBracket = (id: string = useUniqueId()) => {
             loser: getOriginLoserConnections(game, games),
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
-          drawNumber: game.drawNumber || 1
+          drawNumber: game.drawNumber || 1,
+          teams: teams.value?.get(game.id) || []
         })
       })
       newGames.forEach((game, index) => {
@@ -134,7 +136,8 @@ export const useBracket = (id: string = useUniqueId()) => {
             loser: getOriginLoserConnections(game, games),
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
-          drawNumber: game.drawNumber || 1
+          drawNumber: game.drawNumber || 1,
+          teams: teams.value?.get(game.id) || []
 
         })
       })
@@ -372,6 +375,20 @@ export const useBracket = (id: string = useUniqueId()) => {
       return gamesIndex.value.get(gameId)
     }
 
+    const teams = ref<Map<string, any>>(new Map([]))
+    useBracketTeams(bonspielId, {
+      onData: (data) => {
+        data.forEach(({ gameId, team }) => {
+          const currentTeams = teams.value.get(`${gameId}`) || [];
+          currentTeams.push(team)
+          teams.value.set(`${gameId}`, currentTeams)
+        })
+        gamesBracketIndex.value.forEach((games, bracketId) => {
+          setGamesForBracket(games, bracketId)
+        })
+      }
+    })
+
 
     return {
       allGames,
@@ -384,6 +401,7 @@ export const useBracket = (id: string = useUniqueId()) => {
       loserGame,
       numSheets,
       selectedGameId,
+      teams,
       winnerGame,
       addBracket,
       addGame,

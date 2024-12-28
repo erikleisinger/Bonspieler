@@ -2,8 +2,10 @@
 <div v-if="game" class="bg-white rounded-xl px-2 py-2 w-[200px] border-2 h-fit transform-all" ref="el" :class="{
   'border-red-500': loser,
   'border-amber-500': winner,
+  'hover:bg-blue-500': !!teamToAssignId,
   'border-blue-500 hover:bg-blue-50 cursor-pointer ': available && !loser && !winner,
   'opacity-30': opaque,
+
 
 }">
   <div class="flex justify-between mb-2">
@@ -27,11 +29,20 @@
     </div>
   </div>
   <div class="bg-gray-100 rounded-lg overflow-hidden">
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] py-1 hover:bg-gray-200 px-2">
+    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] border-gray-300 py-1  px-2"
+      :class="{
+        'bg-gray-100 hover:bg-gray-200': !!teams[0],
+        'bg-blue-100': !teams[0],
+
+      }">
       {{
-        teams[0] }}</div>
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1 hover:bg-gray-200 px-2">{{
-      teams[1] }}
+        teams[0] || 'Starting team' }}</div>
+    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1  px-2" :class="{
+      'bg-gray-100 hover:bg-gray-200': !!teams[1],
+      'bg-blue-100': !teams[1],
+
+    }">{{
+      teams[1] || 'Starting team' }}
     </div>
   </div>
   <slot />
@@ -43,6 +54,7 @@ import { ref, watch, computed } from 'vue'
 import { useDrawColor } from '@/shared/composables/useDrawColor'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
 import { useBracket } from '../lib/useBracket';
+import { storeToRefs } from 'pinia';
 const props = defineProps<{
   available?: boolean,
   bracketId: string
@@ -53,6 +65,7 @@ const props = defineProps<{
 }>()
 const bracketStore = useBracket(props.bracketId)
 const { getFullGame } = bracketStore
+const { teamToAssignId } = storeToRefs(bracketStore)
 
 const { getDrawColor } = useDrawColor()
 
@@ -68,8 +81,12 @@ const game = computed(() => getFullGame(props.gameId))
 
 
 const teams = computed(() => {
+
   const { origins } = game.value || {};
   const { loser = [], winner = [] } = origins || {};
+
+  const realTeams = game.value?.teams || [];
+
   const all = [...loser.map(({ id }) => {
     const { readableId } = getFullGame(id) || {};
     return `Loser ${readableId}`;
@@ -79,9 +96,9 @@ const teams = computed(() => {
   })];
   let t = []
   if (all.length === 0) {
-    t = ['Team 1', 'Team 2']
+    t = realTeams.map(({ name }) => name)
   } else if (all.length === 1) {
-    t = [...all, 'Team 2']
+    t = [...all, realTeams[0]?.name]
   } else {
     t = [...all]
   }

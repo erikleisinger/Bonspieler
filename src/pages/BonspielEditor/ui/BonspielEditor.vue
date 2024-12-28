@@ -9,7 +9,7 @@
   <BonspielList v-if="editorStep === 'select_event'" @select="selectBonspiel" />
   <div v-else-if="editorStep === 'edit_stage'" class="relative mx-4 bg-white">
     <PoolManager v-if="selectedStage && selectedStage.type === 'pool'"></PoolManager>
-    <BracketManager editable :uniqueId="'bonspiel-editor'" :bracketGroupId="selectedStage.id"
+    <BracketManager editable :uniqueId="'bonspiel-editor'" :bracketGroupId="selectedStage.id" :eventId="selectedSpiel"
       v-if="selectedStage && selectedStage.type === 'bracket'"></BracketManager>
   </div>
   <div v-else-if="editorStep === 'new_stage'" class="relative mx-4 bg-white">

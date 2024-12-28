@@ -13,8 +13,8 @@
         <Draggable :yAxis="!!editable" class="absolute" handle="handle"
           v-for="game in games.filter(({ roundNumber }) => roundNumber === round)"
           :id="getBracketGameElementId(uniqueId, game.id)"
-          :boundaryElementSelector="'#' + getBracketRoundElementId(uniqueId, round)" :x="game.transform.x"
-          :y="game.transform.y" @update="onDragUpdate(game.id, $event)" :key="game.id" :class="{
+          :boundaryElementSelector="'#' + getBracketRoundElementId(uniqueId, round)" :initialX="game.transform.x"
+          :initialY="game.transform.y" @update="onDragUpdate(game.id, $event)" :key="game.id" :class="{
             'z-50': selectedGameId === game.id,
           }">
           <div>
