@@ -16,7 +16,7 @@
           :boundaryElementSelector="'#' + getBracketRoundElementId(uniqueId, round)" :initialX="game.transform.x"
           :initialY="game.transform.y" @update="onDragUpdate(game.id, $event)" :key="game.id" :class="{
             'z-50': selectedGameId === game.id,
-          }">
+          }" v-memo="[game.transform.y]">
           <div>
             <div class="flex m-4 relative">
               <slot name="prepend-game" />

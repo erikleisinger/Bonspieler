@@ -71,7 +71,7 @@ const props = defineProps<{
   winner?: boolean;
 }>()
 const bracketStore = useBracket(props.bracketId)
-const { getFullGame, getTeamById } = bracketStore
+const { getFullGame, getTeamById, getTeamsForGame } = bracketStore
 
 
 const { getDrawColor } = useDrawColor()
@@ -89,7 +89,7 @@ const game = computed(() => getFullGame(props.gameId))
 const teams = computed(() => {
   const { origins } = game.value || {};
   const { loser = [], winner = [] } = origins || {};
-  const gameTeams = game.value?.teams || []
+  const gameTeams = getTeamsForGame(props.gameId) || []
   const all = [...loser.map(({ id }) => ({
     originGameId: id,
     type: 'loser'

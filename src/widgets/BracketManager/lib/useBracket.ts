@@ -124,7 +124,6 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
           drawNumber: game.drawNumber || 1,
-          teams: teams.value?.get(game.id) || [],
 
         })
       })
@@ -138,7 +137,6 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
           drawNumber: game.drawNumber || 1,
-          teams: teams.value?.get(game.id) || []
 
         })
       })
@@ -404,6 +402,10 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
       return teamsIndex.value.get(id)
     }
 
+    function getTeamsForGame(gameId: string) {
+      return teams.value.get(gameId)
+    }
+
 
     return {
       allGames,
@@ -436,6 +438,7 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
       getNumRequiredTeamsForBracketEvent,
       getRoundsForBracket,
       getTeamById,
+      getTeamsForGame,
       hasLessThanTwoOriginConnections,
       initGames,
       removeConnectionsToGame,
