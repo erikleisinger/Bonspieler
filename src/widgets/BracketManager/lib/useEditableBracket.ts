@@ -42,9 +42,14 @@ export const useEditableBracket = (id: string) => {
     }
 
     const teamToAssignId = ref<string | null>(null)
+
     function beginTeamAssign(teamId: string) {
       teamToAssignId.value = teamId
       setBracketManagerMode('assignTeam')
+    }
+
+    function setTeamToAssign(teamId: string | null) {
+      teamToAssignId.value = teamId
     }
 
 
@@ -53,6 +58,7 @@ export const useEditableBracket = (id: string) => {
       beginLoserConnect,
       beginTeamAssign,
       setBracketManagerMode,
+      setTeamToAssign,
       mode,
       teamToAssignId,
     }

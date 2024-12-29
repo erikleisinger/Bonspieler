@@ -2,7 +2,6 @@
 <div v-if="game" class="bg-white rounded-xl px-2 py-2 w-[200px] border-2 h-fit transform-all" ref="el" :class="{
   'border-red-500': loser,
   'border-amber-500': winner,
-  'hover:bg-blue-500': !!teamToAssignId,
   'border-blue-500 hover:bg-blue-50 cursor-pointer ': available && !loser && !winner,
   'opacity-30': opaque,
 
@@ -28,21 +27,28 @@
       <div v-else>Loser out</div>
     </div>
   </div>
-  <div class="bg-gray-100 rounded-lg overflow-hidden">
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] border-gray-300 py-1  px-2"
+  <div class=" rounded-md overflow-hidden">
+    <div
+      class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis border-b-[1px] border-gray-300 py-1  px-2 flex gap-1 items-center"
       :class="{
-        'bg-gray-100 hover:bg-gray-200': !!teams[0],
+        'bg-gray-50 hover:bg-gray-200': !!teams[0],
         'bg-blue-100': !teams[0],
 
       }">
+
       {{
-        teams[0] || 'Starting team' }}</div>
-    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1  px-2" :class="{
-      'bg-gray-100 hover:bg-gray-200': !!teams[1],
+        teams[0]?.name || teams[0] || 'Starting team' }}
+      <CheckCircle v-if="isWinner(teams[0]?.id)" class="text-emerald-500 h-[18px] w-[18px]" />
+    </div>
+    <div class="text-sm whitespace-nowrap overflow-hidden overflow-ellipsis py-1  px-2 flex gap-1 items-center" :class="{
+      'bg-gray-50 hover:bg-gray-200': !!teams[1],
       'bg-blue-100': !teams[1],
 
-    }">{{
-      teams[1] || 'Starting team' }}
+    }">
+
+      {{
+        teams[1]?.name || teams[1] || 'Starting team' }}
+      <CheckCircle v-if="isWinner(teams[1]?.id)" class="text-emerald-500 h-[18px] w-[18px]" />
     </div>
   </div>
   <slot />
@@ -53,8 +59,9 @@ import { useElementHover } from '@vueuse/core';
 import { ref, watch, computed } from 'vue'
 import { useDrawColor } from '@/shared/composables/useDrawColor'
 import NumberBubble from '@/shared/ui/NumberBubble.vue';
+import CheckCircle from '@/shared/icons/CheckCircle.vue';
 import { useBracket } from '../lib/useBracket';
-import { storeToRefs } from 'pinia';
+
 const props = defineProps<{
   available?: boolean,
   bracketId: string
@@ -64,8 +71,8 @@ const props = defineProps<{
   winner?: boolean;
 }>()
 const bracketStore = useBracket(props.bracketId)
-const { getFullGame } = bracketStore
-const { teamToAssignId } = storeToRefs(bracketStore)
+const { getFullGame, getTeamById } = bracketStore
+
 
 const { getDrawColor } = useDrawColor()
 
@@ -79,30 +86,59 @@ watch(hovered, (val) => {
 const game = computed(() => getFullGame(props.gameId))
 
 
-
 const teams = computed(() => {
-
   const { origins } = game.value || {};
   const { loser = [], winner = [] } = origins || {};
+  const gameTeams = game.value?.teams || []
+  const all = [...loser.map(({ id }) => ({
+    originGameId: id,
+    type: 'loser'
+  })), ...winner.map(({ id }) => ({
+    originGameId: id,
+    type: 'winner'
+  })), ...gameTeams.map((t) => ({
+    team: t,
+    type: 'team'
+  }))];
 
-  const realTeams = game.value?.teams || [];
 
-  const all = [...loser.map(({ id }) => {
-    const { readableId } = getFullGame(id) || {};
-    return `Loser ${readableId}`;
-  }), ...winner.map(({ id }) => {
-    const { readableId } = getFullGame(id) || {};
-    return `Winner ${readableId}`;
-  })];
-  let t = []
-  if (all.length === 0) {
-    t = realTeams.map(({ name }) => name)
-  } else if (all.length === 1) {
-    t = [...all, realTeams[0]?.name]
-  } else {
-    t = [...all]
-  }
-  return t
+
+  const x = all.map(({ originGameId: id, type, team }) => {
+    if (type === 'loser') {
+      const fullGame = getFullGame(id)
+      if (!fullGame) return null;
+      if (fullGame.game.loserTeamId) return {
+        gameY: fullGame.game.transform.y,
+        team: getTeamById(fullGame.game.loserTeamId)
+      }
+      const { readableId } = fullGame;
+      return {
+        gameY: fullGame.game.transform.y,
+        text: `Loser ${readableId}`
+      };
+    }
+    else if (type === 'winner') {
+      const fullGame = getFullGame(id)
+      if (!fullGame) return null;
+      if (fullGame.game.winnerTeamId) return {
+        gameY: fullGame.game.transform.y,
+        team: getTeamById(fullGame.game.winnerTeamId)
+      }
+      const { readableId } = fullGame;
+      return {
+        gameY: fullGame.game.transform.y,
+        text: `Winner ${readableId}`
+      };
+    } else if (type === 'team') {
+      return {
+        gameY: game.value.game.transform.y,
+        team: team
+      }
+    }
+
+  }).sort((a, b) => a.gameY - b.gameY).map(({ team, text }) => team || text)
+
+  return x;
 
 
 })
@@ -112,4 +148,8 @@ const connections = computed(() => {
 })
 
 const loserConnection = computed(() => !connections.value?.loser ? null : getFullGame(connections.value.loser))
+
+function isWinner(teamId: string) {
+  return game.value?.game?.winnerTeamId === teamId;
+}
 </script>

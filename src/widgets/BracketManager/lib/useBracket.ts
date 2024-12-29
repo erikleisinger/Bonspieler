@@ -124,7 +124,8 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
           },
           readableId: game.readableId || `${numberToLetter(bracketIndex + 1)}${index + 1}`,
           drawNumber: game.drawNumber || 1,
-          teams: teams.value?.get(game.id) || []
+          teams: teams.value?.get(game.id) || [],
+
         })
       })
       newGames.forEach((game, index) => {
@@ -376,18 +377,32 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
     }
 
     const teams = ref<Map<string, any>>(new Map([]))
+    const teamsIndex = ref<Map<string, any>>(new Map([]))
     useBracketTeams(bonspielId, {
       onData: (data) => {
-        data.forEach(({ gameId, team }) => {
-          const currentTeams = teams.value.get(`${gameId}`) || [];
-          currentTeams.push(team)
-          teams.value.set(`${gameId}`, currentTeams)
-        })
-        gamesBracketIndex.value.forEach((games, bracketId) => {
-          setGamesForBracket(games, bracketId)
-        })
+        try {
+          teams.value.forEach((_, gameId) => {
+            teams.value.set(`${gameId}`, [])
+          })
+          data.forEach(({ gameId, team }) => {
+            const currentTeams = teams.value.get(`${gameId}`) || [];
+            currentTeams.push(team)
+            teams.value.set(`${gameId}`, currentTeams)
+            teamsIndex.value.set(team.id, team)
+          })
+          gamesBracketIndex.value.forEach((games, bracketId) => {
+            setGamesForBracket(games, bracketId)
+          })
+        } catch (e) {
+          console.log('error: ', e)
+        }
+
       }
     })
+
+    function getTeamById(id: string) {
+      return teamsIndex.value.get(id)
+    }
 
 
     return {
@@ -402,6 +417,7 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
       numSheets,
       selectedGameId,
       teams,
+      teamsIndex,
       winnerGame,
       addBracket,
       addGame,
@@ -419,6 +435,7 @@ export const useBracket = (id: string = useUniqueId(), bonspielId: string) => {
       getNumEndTeamsForBracketEvent,
       getNumRequiredTeamsForBracketEvent,
       getRoundsForBracket,
+      getTeamById,
       hasLessThanTwoOriginConnections,
       initGames,
       removeConnectionsToGame,

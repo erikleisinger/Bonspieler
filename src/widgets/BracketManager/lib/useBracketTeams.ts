@@ -33,6 +33,7 @@ export const useBracketTeams = (bonspielId: string, {
     queryFn: getBracketTeams,
     queryKey: ['bracketTeams', bonspielId],
     select: (data) => {
+      console.log('refetch teams')
       const cleanedData = data.map(({ bracket_game, team }) => ({
         gameId: bracket_game?.id,
         team,

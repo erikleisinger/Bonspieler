@@ -16,6 +16,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
     "@tanstack/vue-query": "^5.62.8",
+    "@tanstack/vue-query-devtools": "^5.62.9",
     "@vueuse/core": "^12.0.0",
     "@vueuse/integrations": "^12.0.0",
     "pinia": "^2.2.6",

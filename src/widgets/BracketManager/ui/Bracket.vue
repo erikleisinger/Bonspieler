@@ -25,7 +25,7 @@
                 @hover="onHover(game, $event)" :available="isGameAvailable(game)"
                 :opaque="availableGames && !!availableGames.length && !isGameAvailable(game)"
                 :loser="(mode === 'setLoser' && selectedGameId !== game.id && isGameAvailable(game)) || loserGame === game.id"
-                :winner="winnerGame === game.id">
+                :winner="winnerGame === game.id" @mouseup.native="onMouseup(game.id)">
 
 
                 <WinnerIconBubble
@@ -106,7 +106,7 @@ const games = computed(() => getGamesForBracket(props.uniqueId));
 
 
 
-const emit = defineEmits(['selectGame', 'clear', 'hover', 'update:dragPosition', 'updateLineWidth'])
+const emit = defineEmits(['selectGame', 'clear', 'hover', 'update:dragPosition', 'updateLineWidth', 'mouseUp'])
 
 const { dragElementId } = storeToRefs(useDraggableStore())
 
@@ -150,6 +150,7 @@ const gamesCount = computed(() => (games.value || []).length)
 
 function onClick(game) {
   emit('selectGame', game)
+  console.log('click')
 }
 
 onMounted(() => {
@@ -209,6 +210,10 @@ function onHover(game, isHovered) {
     isHovered
   })
 
+}
+
+function onMouseup(gameId) {
+  emit('mouseUp', gameId)
 }
 
 </script>

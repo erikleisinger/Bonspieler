@@ -1,7 +1,8 @@
 <template>
 <Bracket editable :mode="mode" :rounds="editedRounds" :availableGames="availableGames"
-  @updateLineWidth="onUpdateLineWidth" :uniqueId="uniqueId" @hover="onHover" :bracketId="bracketId"
-  @selectGame="emit('selectGame', $event)" @update:dragPosition="onDragUpdate" @click="emit('clear', $event)">
+  @updateLineWidth="onUpdateLineWidth" :uniqueId="uniqueId" @hover="onHover" @mouseUp="assignTeamMaybe"
+  :bracketId="bracketId" @selectGame="emit('selectGame', $event)" @update:dragPosition="onDragUpdate"
+  @click="emit('clear', $event)">
   <div class="fixed  pointer-events-none" :id="mouseShadowId" :style="{
     top: `${mouseY}px`,
     left: `${mouseX}px`,
@@ -70,10 +71,12 @@ import { useUniqueId } from '@/shared/composables/useUniqueId'
 import { useBracket } from '../lib/useBracket';
 import { useBracketElement } from '../lib/useBracketElement';
 import { useEditableBracket } from '../lib/useEditableBracket';
+import { useEditableBracketGame } from '../lib/useEditableBracketGame';
 import { storeToRefs } from 'pinia';
 
 const props = defineProps({
   bracketId: String,
+  eventId: String,
   mode: String,
   games: {
     type: Array,
@@ -104,6 +107,7 @@ const { selectedGameId } = storeToRefs(bracketStore)
 
 const editableBracketStore = useEditableBracket(props.bracketId)();
 const { beginConnect } = editableBracketStore
+const { teamToAssignId } = storeToRefs(editableBracketStore)
 
 const editedRounds = ref([])
 
@@ -228,6 +232,13 @@ function onUpdateLineWidth({
     }
   }
   updateGame(updatedGame);
+}
+
+const { addTeamToGame } = useEditableBracketGame()
+function assignTeamMaybe(gameId) {
+  console.log('assignTeamMaybe', gameId, teamToAssignId.value)
+  if (!gameId || !teamToAssignId.value) return;
+  addTeamToGame(teamToAssignId.value, gameId, props.eventId)
 }
 
 </script>

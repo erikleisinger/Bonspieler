@@ -36,8 +36,7 @@
             <div class="font-semibold mb-2 mt-2">
               <div>Teams</div>
             </div>
-            <BracketTeamList :bonspielId="eventId" :uniqueId="uniqueId" @dragStart="onDragStart"
-              @dragEnd="setBracketManagerMode('view')" />
+            <BracketTeamList :bonspielId="eventId" :uniqueId="uniqueId" @dragStart="onDragStart" @dragEnd="onDragEnd" />
           </div>
         </div>
       </div>
@@ -53,7 +52,7 @@
             :class="mode === 'viewGame' ? 'bg-blue-100' : 'bg-white'">
             <BracketEditable v-if="editable && !loading" class="rounded-xl min-h-[600px]"
               :availableGames="availableGames" @selectGame="onGameSelect($event, bracket)" :bracketId="uniqueId"
-              :uniqueId="bracket" @clear="reset" />
+              :uniqueId="bracket" @clear="reset" :eventId="eventId" />
 
             <Bracket v-else-if="!loading" class="rounded-xl min-h-[600px]" :rounds="getRoundsForBracket(bracket)"
               @click="reset" :games="getGamesForBracket(bracket)" :availableGames="availableGames"
@@ -142,7 +141,7 @@ const {
 const editableBracketStore = useEditableBracket(props.uniqueId)()
 
 const { mode, teamToAssignId } = storeToRefs(editableBracketStore)
-const { setBracketManagerMode, beginTeamAssign } = editableBracketStore
+const { setBracketManagerMode, beginTeamAssign, setTeamToAssign } = editableBracketStore
 
 function reset() {
   setSelectedGameId(null);
@@ -281,6 +280,11 @@ const sheets = computed({
 
 function onDragStart(teamId: string) {
   beginTeamAssign(teamId)
+}
+
+function onDragEnd() {
+  setBracketManagerMode('view')
+  setTeamToAssign(null)
 }
 
 

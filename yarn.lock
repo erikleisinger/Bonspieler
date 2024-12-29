@@ -953,6 +953,18 @@
   resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.62.8.tgz#4a7df096ca6014a11b1185c1a14923659d17608c"
   integrity sha512-4fV31vDsUyvNGrKIOUNPrZztoyL187bThnoQOvAXEVlZbSiuPONpfx53634MKKdvsDir5NyOGm80ShFaoHS/mw==
 
+"@tanstack/query-devtools@5.62.9":
+  version "5.62.9"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-devtools/-/query-devtools-5.62.9.tgz#9bbb8b8ef2c80455add15b873a1d8d6ee6eb462e"
+  integrity sha512-b1NZzDLVf6laJsB1Cfm3ieuYzM+WqoO8qpm9v+3Etwd+Ph4zkhUMiT+wcWj5AhEPsXiRodKYiiW048VDNdBxNg==
+
+"@tanstack/vue-query-devtools@^5.62.9":
+  version "5.62.9"
+  resolved "https://registry.yarnpkg.com/@tanstack/vue-query-devtools/-/vue-query-devtools-5.62.9.tgz#bd4b508f8cb0215b18fed0a9ceb8c0c6611a9e2e"
+  integrity sha512-TBW028y+0GyiG9uDLzdE7rJUTnHp4MzHxq4uCjw2xDhyzXTq48BmqF2q5g0q2SbI9YK3Q7oltfY0asnfxx+bwQ==
+  dependencies:
+    "@tanstack/query-devtools" "5.62.9"
+
 "@tanstack/vue-query@^5.62.8":
   version "5.62.8"
   resolved "https://registry.yarnpkg.com/@tanstack/vue-query/-/vue-query-5.62.8.tgz#1bca09707da184fcda325803bd1f2efd3109f2e8"
